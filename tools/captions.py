@@ -7,6 +7,7 @@ import argparse, json, sys, time
 from pathlib import Path
 
 import cv2
+import numpy as np
 import torch
 from PIL import Image
 
@@ -39,6 +40,9 @@ def main():
     ap.add_argument("--out", default="data/captions")
     ap.add_argument("--step", type=float, default=1.0, help="шаг по времени, с")
     ap.add_argument("--cap", type=int, default=25)
+    ap.add_argument("--fuse", type=int, default=0,
+                    help="медиана N соседних кадров: убирает шум сенсора и артефакты "
+                         "сжатия на статичной сцене, но размазывает движущееся")
     a = ap.parse_args()
     Path(a.out).mkdir(parents=True, exist_ok=True)
 
@@ -69,10 +73,16 @@ def main():
 
         caps = []
         for i in idx:
-            crop = objects.crop_object(fr[i].img, zone, target_px=430_000, pad_rel=0.05)
+            if a.fuse > 1:
+                lo = max(0, i - a.fuse // 2); hi = min(len(fr), lo + a.fuse)
+                stack = [f.img for f in fr[lo:hi] if f.img is not None]
+                base = (np.median(np.stack([x.astype(np.float32) for x in stack]), axis=0)
+                        .clip(0, 255).astype(np.uint8)) if len(stack) > 1 else fr[i].img
+            else:
+                base = fr[i].img
+            crop = objects.crop_object(base, zone, target_px=430_000, pad_rel=0.05)
             txt = capmod.caption(crop)
             caps.append({"t": round(fr[i].t, 2), "caption": txt.strip()})
-            fr[i].img = None
         dst.write_text(json.dumps({"video": name, "model": capmod.MODEL_ID, "zone": [int(v) for v in zone] if zone else None,
                                    "captions": caps}, ensure_ascii=False, indent=1))
         d = time.time() - t0
