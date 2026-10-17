@@ -196,3 +196,27 @@ def jpeg_b64(img: np.ndarray, quality: int = 85, max_side: int = 1280) -> str:
     if not ok:
         raise RuntimeError("не удалось закодировать кадр в JPEG")
     return base64.b64encode(buf.tobytes()).decode("ascii")
+
+
+def annotate(img: np.ndarray, box, t: float, highlight: bool = False) -> np.ndarray:
+    """Отметка области и таймкода на кадре-доказательстве.
+
+    ТЗ требует кадр, «позволяющий человеку проверить вывод» (раздел 5). Пачка
+    купюр или стакан занимают на кадре десятки пикселей — без рамки проверяющему
+    пришлось бы искать предмет глазами. Кадр события выделяется ярче соседних.
+    """
+    out = img.copy()
+    h, w = out.shape[:2]
+    colour = (0, 215, 255) if highlight else (180, 180, 180)
+    thick = 2 if highlight else 1
+    if box:
+        x1, y1, x2, y2 = (int(v) for v in box)
+        pad = int(0.02 * max(h, w))
+        cv2.rectangle(out, (max(0, x1 - pad), max(0, y1 - pad)),
+                      (min(w - 1, x2 + pad), min(h - 1, y2 + pad)), colour, thick)
+    label = f"{int(t // 60):02d}:{t % 60:04.1f}" + ("  <-- событие" if highlight else "")
+    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+    cv2.rectangle(out, (4, 4), (8 + tw, 12 + th), (0, 0, 0), -1)
+    cv2.putText(out, label, (6, 8 + th), cv2.FONT_HERSHEY_SIMPLEX, 0.45, colour, 1,
+                cv2.LINE_AA)
+    return out
