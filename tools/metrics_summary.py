@@ -9,8 +9,10 @@
     .venv/bin/python tools/metrics_summary.py --write     # вставить в документы
     .venv/bin/python tools/metrics_summary.py --check     # сверить, не устарело ли
 
-Считает ровно то, что отдаёт сервис: те же `rules.detect_events(series, tracks)`
-и тот же порог площади трека.
+Считает ровно то, что отдаёт сервис: корпус `data/corpus` (tools/gpu_corpus.py),
+кадры — `pipeline.select_keyframes` при боевом KF_CAP, факты — `pipeline.frame_facts`
+плюс второй описатель (`data/vlm`), события — `rules.detect_events`. Нет корпуса —
+прежний харнесс по `data/captions` (маковская сетка, не совпадает с сервисом).
 """
 import argparse
 import glob
@@ -29,16 +31,31 @@ END = "<!-- МЕТРИКИ:конец -->"
 TARGETS = ["README.md", "SUBMISSION.md", "PITCH.md"]
 
 
+# Боевая конфигурация GPU-сервера (юнит forte): KF_CAP=90, VLM=1.
+SERVICE_KF_CAP = 90
+CORPUS = Path("data/corpus")
+
+
+def _series(name):
+    if CORPUS.exists():
+        from eval_corpus import series_at, vlm_extra
+        series, tracks, _, _ = series_at(name, SERVICE_KF_CAP, vlm_extra)
+        return series, tracks
+    return series_for(name)
+
+
 def measure() -> dict:
     tp = fp = fn = tn = 0
     errs: list[float] = []
     hits: list[str] = []
     fps: list[str] = []
-    for p in sorted(glob.glob("data/captions/*.caps.json")):
-        name = Path(p).stem.replace(".caps", "")
+    src = (sorted(CORPUS.glob("*.json")) if CORPUS.exists()
+           else sorted(Path("data/captions").glob("*.caps.json")))
+    for p in src:
+        name = p.stem.replace(".caps", "")
         if name not in LABELS or name in DUPLICATES:
             continue
-        series, tracks = series_for(name)
+        series, tracks = _series(name)
         if not series:
             continue
         ev = rules.detect_events(series, tracks=tracks)
@@ -105,8 +122,10 @@ def table(m: dict, r: dict) -> str:
         "",
         f"Замер: {m['n']} уникальных роликов обучающей выборки "
         f"({m['viol']} с нарушением, {m['clean']} чистых). `Х-47` и `Х-48` — побайтовые "
-        "копии `Х-4` и `Х-5`, из счёта исключены. Воспроизводится командой "
-        "`PYTHONPATH=tools .venv/bin/python tools/eval_caps.py`.",
+        "копии `Х-4` и `Х-5`, из счёта исключены. Конфигурация боевого GPU-сервиса "
+        f"(KF_CAP={SERVICE_KF_CAP}, второй описатель Qwen3-VL); кадры и факты считаются "
+        "функциями сервиса. Воспроизводится командой "
+        f"`PYTHONPATH=service:tools .venv/bin/python tools/eval_corpus.py --vlm --cap {SERVICE_KF_CAP}`.",
         "",
         "| Метрика | Значение |",
         "|---|---|",
@@ -116,8 +135,8 @@ def table(m: dict, r: dict) -> str:
         f"(специфичность {m['spec']:.0f} %) |",
         f"| Ошибка таймкода | медиана **{m['med']:.1f} с**, ≤3 с у {m['le3']:.0f} %, "
         f"средняя {m['mean']:.1f} с |",
-        *(f"| Устойчивость: {k} | {v['ok']} из {v['total']} прогонов с верным вердиктом |"
-          for k, v in r.items()),
+        *(f"| Устойчивость: {k} | {v['ok']} из {v['total']} прогонов с верным вердиктом "
+          "(через боевой сервис) |" for k, v in r.items()),
         "",
         f"Найдены: {', '.join('`' + h + '`' for h in m['hits'])}. "
         + (f"Ложное срабатывание: {', '.join('`' + f + '`' for f in m['fps'])}."
