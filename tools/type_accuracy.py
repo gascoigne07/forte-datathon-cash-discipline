@@ -25,6 +25,23 @@ from app import rules  # noqa: E402
 from eval_caps import DUPLICATES, series_for  # noqa: E402
 from evaluate import LABELS  # noqa: E402
 
+# Боевая конфигурация GPU-сервера (юнит forte): события считаются по корпусу
+# «как в сервисе» (tools/gpu_corpus.py) с теми же KF_CAP и вторым описателем.
+# Нет корпуса — прежний харнесс по data/captions.
+SERVICE_KF_CAP = 90
+
+
+def events_for(name):
+    """Ключи событий, которые выдал бы сервис на этом ролике, или None."""
+    if Path(f"data/corpus/{name}.json").exists():
+        from eval_corpus import series_at, vlm_extra
+        series, tracks, _, _ = series_at(name, SERVICE_KF_CAP, vlm_extra)
+    else:
+        series, tracks = series_for(name)
+    if not series:
+        return None
+    return {e.key for e in rules.detect_events(series, tracks=tracks)}
+
 # Напарник возвращает .xlsx (его собирает tools/make_labeling_xlsx.py): CSV в
 # Excel на macOS открывается в MacRoman и кириллица рассыпается. Читаем оба формата.
 SOURCES = [Path("annotation/РАЗМЕТКА.xlsx"), Path("annotation/labels.xlsx"),
@@ -36,8 +53,8 @@ MAP = {
     "cash_unattended": {"cash_unattended", "unattended_desk"},
     "cash_handover": {"cash_unattended", "manual_count"},
     "left_workplace": {"left_workplace", "unattended_desk"},
-    "cabin_open": {"outsider_with_cash"},
-    "outsider": {"outsider_with_cash"},
+    "cabin_open": {"outsider_with_cash", "outsider_vlm"},
+    "outsider": {"outsider_with_cash", "outsider_vlm"},
     "food_drink": {"food_drink"},
     "personal_bag": {"personal_bag"},
     "sealed_bag": {"sealed_bag"},
@@ -122,14 +139,14 @@ def main():
     confusion: Counter = Counter()
     uncaught: Counter = Counter()
     print(f"{'ролик':8s} {'размечено':18s} {'выдано сервисом':34s} итог")
-    for p in sorted(glob.glob("data/captions/*.caps.json")):
-        name = Path(p).stem.replace(".caps", "")
+    names = sorted({Path(p).stem.replace(".caps", "") for p in
+                    glob.glob("data/captions/*.caps.json") + glob.glob("data/corpus/*.json")})
+    for name in names:
         if name not in LABELS or name in DUPLICATES or name not in gold:
             continue
-        series, tracks = series_for(name)
-        if not series:
+        got = events_for(name)
+        if got is None:
             continue
-        got = {e.key for e in rules.detect_events(series, tracks=tracks)}
         for row in gold[name]:
             code = (row.get("type") or "").strip()
             if not code:                       # строка ещё не заполнена

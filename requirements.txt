@@ -13,3 +13,4 @@ fastapi
 uvicorn[standard]
 python-multipart
 huggingface_hub
+openpyxl         # только для tools/type_accuracy.py (разметка напарника в .xlsx)
