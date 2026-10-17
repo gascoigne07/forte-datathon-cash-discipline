@@ -601,7 +601,7 @@ function buildRuleBoxHtml(rule) {
       <div class="rule-box__label">Норматив</div>
       <div class="rule-box__title">${escapeHtml(rule.doc_title)}</div>
       ${rule.doc_requisites ? `<div class="rule-box__requisites">${escapeHtml(rule.doc_requisites)}</div>` : ''}
-      ${rule.clause ? `<div class="rule-box__clause">${escapeHtml(rule.clause)}</div>` : ''}
+      ${rule.clause ? `<div class="rule-box__clause">${escapeHtml(rule.clause)}${rule.edition ? ` — ${escapeHtml(rule.edition)}` : ''}</div>` : ''}
       ${rule.quote ? `<blockquote class="rule-box__quote">«${escapeHtml(rule.quote)}»</blockquote>` : ''}
       ${rule.verified === false ? `
         <div class="rule-box__unverified">

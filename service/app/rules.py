@@ -68,6 +68,10 @@ def rule_ref(key: str) -> dict | None:
         "doc_title": r.get("doc_title", ""),
         "doc_requisites": r.get("doc_requisites", ""),
         "clause": r.get("clause"),
+        # Редакция пункта: акты РК правятся постановлениями, и без указания
+        # редакции проверяющий не может сверить цитату с действующим текстом.
+        # Проставляется скриптом tools/check_editions.py по сноскам в выгрузке.
+        "edition": r.get("edition"),
         "quote": r.get("quote"),
         "url": r.get("doc_url"),
         "verified": bool(r.get("verified")),

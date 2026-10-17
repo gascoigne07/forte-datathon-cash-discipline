@@ -12,6 +12,7 @@ class RuleRef(BaseModel):
     doc_title: str
     doc_requisites: str
     clause: str | None = None
+    edition: str | None = None
     quote: str | None = None
     url: str | None = None
     verified: bool = True
