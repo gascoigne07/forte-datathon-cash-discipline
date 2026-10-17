@@ -82,9 +82,14 @@ def extract(name):
         hands_at_machine = None
         if teller and mach:
             hands_at_machine = _dist_to_zone(teller["box"], mach) / zw
+        # Тем же кодом, что и сервис (perception.split_by_desk): признак «за
+        # столешницей никого, но в комнате кто-то есть» — наблюдаемая часть п.22.
+        at_desk, off_desk = perception.split_by_desk(ppl, zone)
         rows.append({
             "t": round(f.t, 2),
             "ppl": len(ppl),
+            "at_desk": at_desk,
+            "off_desk": off_desk,
             "teller_dist": None if d is None else round(d, 3),
             "machine_dist": None if hands_at_machine is None else round(hands_at_machine, 3),
             "motion": round(f.motion, 2),

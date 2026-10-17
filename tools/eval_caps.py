@@ -37,6 +37,11 @@ def series_for(name):
         row = byt.get(c["t"]) or min(feats["rows"], key=lambda r: abs(r["t"] - c["t"])) if feats["rows"] else None
         f["people_in_cabin"] = row["ppl"] if row else 0
         f["teller_present"] = bool(row and row["ppl"] > 0 and row.get("teller_dist") is not None)
+        # Признак для правила о пункте 22. Берётся из data/feats, который считает
+        # его тем же perception.split_by_desk, что и сервис: расхождение харнесса
+        # с сервисом уже дважды за ночь давало замеры несуществующей конфигурации.
+        f["at_desk"] = (row or {}).get("at_desk", 0)
+        f["off_desk"] = (row or {}).get("off_desk", 0)
         f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3
                                  and t["area"] >= TRACK_MIN_AREA
                                  for t in feats.get("tracks", []))

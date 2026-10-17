@@ -106,6 +106,10 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
         ppl = perception.persons_in_room(f, desk_top=zone[1])
         facts["people_in_cabin"] = max(len(ppl), caption.count_people(text))
         facts["teller_present"] = _teller_at_desk(ppl, zone)
+        # Кто за столешницей и кто в комнате, но не за ней. По этому признаку
+        # работает правило о пункте 22: «покидать рабочее место до окончания
+        # обслуживания клиента не допускается».
+        facts["at_desk"], facts["off_desk"] = perception.split_by_desk(ppl, zone)
         # Независимый от модели канал: в этот момент на столешнице есть предмет,
         # появившийся по ходу записи (вычитание фона). Нужен как второе
         # подтверждение к «в описании кадра нет ни одного человека».
