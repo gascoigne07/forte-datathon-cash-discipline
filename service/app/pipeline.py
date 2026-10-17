@@ -25,7 +25,10 @@ def _noop(p: float, s: str) -> None:  # pragma: no cover
     pass
 
 
-def analyze(path: str, progress: Progress = _noop) -> dict:
+def analyze(path: str, progress: Progress = _noop, queued: int = 0) -> dict:
+    """queued — сколько заданий ждёт за этим. Чем длиннее очередь, тем меньше
+    кадров разбираем: у жюри 5+ тестовых видео, и лимит 5 минут отсчитывается
+    для каждого, а не для всей пачки."""
     t0 = time.time()
     left = lambda: BUDGET_SEC - (time.time() - t0)      # noqa: E731
 
@@ -47,7 +50,8 @@ def analyze(path: str, progress: Progress = _noop) -> dict:
     tracks = objects.detect_objects(frames, zone=zone)
 
     progress(0.22, "выбор ключевых кадров")
-    idx = perception.keyframes(frames, budget=KF_HARD_CAP, step_sec=KF_STEP_SEC)
+    cap = KF_HARD_CAP if queued <= 0 else max(12, int(KF_HARD_CAP / (1 + queued)))
+    idx = perception.keyframes(frames, budget=cap, step_sec=KF_STEP_SEC)
     for tr in tracks:                                   # моменты появления предметов — обязательно
         j = min(range(len(frames)), key=lambda i: abs(frames[i].t - tr.t_start))
         if j not in idx:
@@ -113,6 +117,7 @@ def analyze(path: str, progress: Progress = _noop) -> dict:
         "processing_sec": round(time.time() - t0, 1),
         "frames_analyzed": len(series),
         "frames_total_sampled": len(frames),
+        "queued_behind": queued,
     }
 
 

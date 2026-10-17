@@ -39,16 +39,38 @@ PERSON_RE = re.compile(
     r"worker|employee|cashier|client|customer|visitor)\b", re.I)
 
 
+# Описатель кадра переключается переменной окружения, а факты из его текста
+# извлекаются одним и тем же кодом — так две модели сравниваются честно:
+# одинаковые правила и ключевые слова, разный источник описания.
+BACKEND = "qwen" if "Qwen" in MODEL_ID else "florence"
+
+# Для Qwen просим описание по-английски: ключевые слова ниже собраны под английский
+# текст Florence-2, и менять их ради второй модели значило бы менять и правила.
+QWEN_PROMPT = (
+    "This is an overhead frame of a bank teller's desk. "
+    "Describe in English, in 2-3 sentences, exactly what is visible: how many people are in "
+    "the room, whether a worker is at the desk, and every object lying on the desktop "
+    "(name banknotes, cash, cards, papers, cups, cans, bottles, bags explicitly if present). "
+    "Describe only what is actually visible."
+)
+
+
 def _load():
     global _MODEL
     if _MODEL is None:
-        import torch
-        from transformers import Florence2ForConditionalGeneration, Florence2Processor
-        dev = "mps" if torch.backends.mps.is_available() else "cpu"
-        proc = Florence2Processor.from_pretrained(MODEL_ID)
-        model = Florence2ForConditionalGeneration.from_pretrained(
-            MODEL_ID, dtype=torch.float32, attn_implementation="eager").to(dev).eval()
-        _MODEL = (model, proc, dev, torch)
+        if BACKEND == "qwen":
+            from mlx_vlm import load
+            from mlx_vlm.utils import load_config
+            model, proc = load(MODEL_ID)
+            _MODEL = (model, proc, load_config(MODEL_ID), None)
+        else:
+            import torch
+            from transformers import Florence2ForConditionalGeneration, Florence2Processor
+            dev = "mps" if torch.backends.mps.is_available() else "cpu"
+            proc = Florence2Processor.from_pretrained(MODEL_ID)
+            model = Florence2ForConditionalGeneration.from_pretrained(
+                MODEL_ID, dtype=torch.float32, attn_implementation="eager").to(dev).eval()
+            _MODEL = (model, proc, dev, torch)
     return _MODEL
 
 
@@ -57,8 +79,29 @@ def warmup() -> None:
         _load()
 
 
+def _caption_qwen(img: np.ndarray, max_new_tokens: int) -> str:
+    import os as _os
+    import tempfile
+    from mlx_vlm import generate
+    from mlx_vlm.prompt_utils import apply_chat_template
+    model, proc, config, _ = _load()
+    path = tempfile.mktemp(suffix=".jpg")
+    cv2.imwrite(path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
+    try:
+        fmt = apply_chat_template(proc, config, QWEN_PROMPT, num_images=1)
+        with _LOCK:
+            res = generate(model, proc, fmt, [path], max_tokens=max_new_tokens,
+                           temperature=0.0, verbose=False)
+        return getattr(res, "text", str(res)).strip()
+    finally:
+        if _os.path.exists(path):
+            _os.unlink(path)
+
+
 def caption(img: np.ndarray, max_new_tokens: int = 140) -> str:
-    """Подробное описание кадра (английский — модель так обучена)."""
+    """Подробное описание кадра (английский — под него собраны ключевые слова)."""
+    if BACKEND == "qwen":
+        return _caption_qwen(img, max_new_tokens)
     from PIL import Image
     model, proc, dev, torch = _load()
     pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))

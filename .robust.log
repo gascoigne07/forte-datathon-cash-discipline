@@ -1,0 +1,4 @@
+W1017 19:14:14.736000 74739 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 14160.69it/s]
+Loading weights:   0%|          | 0/917 [00:00<?, ?it/s]Loading weights:  19%|█▊        | 171/917 [00:00<00:00, 1604.53it/s]Loading weights:  38%|███▊      | 352/917 [00:00<00:00, 1657.43it/s]Loading weights:  56%|█████▋    | 518/917 [00:01<00:01, 360.65it/s] Loading weights:  90%|█████████ | 827/917 [00:01<00:00, 683.87it/s]Loading weights: 100%|██████████| 917/917 [00:01<00:00, 569.90it/s]
+Х-40__rot+7                violation       120с кадров= 40 разметка=[17]    Личные вещи (сумка) на рабоч@15

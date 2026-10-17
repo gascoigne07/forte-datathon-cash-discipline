@@ -49,6 +49,12 @@ class JobStore:
         with self._lock:
             return self._jobs.get(jid)
 
+    def pending(self) -> int:
+        """Сколько заданий ждёт очереди. Жюри прогоняет 5+ видео подряд, и если
+        каждое обрабатывать по максимуму, последнее дождётся своего лимита 5 минут
+        уже в очереди. Пайплайн уменьшает число разбираемых кадров, когда очередь не пуста."""
+        return self._q.qsize()
+
     def _loop(self) -> None:
         from .pipeline import analyze
         while True:
@@ -63,7 +69,7 @@ class JobStore:
                     _j.progress = round(min(max(p, 0.0), 1.0), 3)
                     _j.stage = s
 
-                job.result = analyze(job.path, progress)
+                job.result = analyze(job.path, progress, queued=self.pending())
                 job.status = "done"
                 job.progress = 1.0
                 job.stage = "готово"

@@ -42,11 +42,9 @@ def main():
     a = ap.parse_args()
     Path(a.out).mkdir(parents=True, exist_ok=True)
 
-    from transformers import Florence2ForConditionalGeneration, Florence2Processor
-    proc = Florence2Processor.from_pretrained(MODEL)
-    model = Florence2ForConditionalGeneration.from_pretrained(
-        MODEL, dtype=torch.float32, attn_implementation="eager").to(DEV).eval()
-    print(f"{MODEL} на {DEV}", file=sys.stderr)
+    from app import caption as capmod
+    capmod.warmup()
+    print(f"описатель: {capmod.MODEL_ID} (бэкенд {capmod.BACKEND})", file=sys.stderr)
 
     for v in a.videos:
         name = Path(v).stem
@@ -65,17 +63,10 @@ def main():
         caps = []
         for i in idx:
             crop = objects.crop_object(fr[i].img, zone, target_px=430_000, pad_rel=0.05)
-            img = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
-            inputs = proc(text=TASK, images=img, return_tensors="pt").to(DEV)
-            with torch.inference_mode():
-                ids = model.generate(input_ids=inputs["input_ids"],
-                                     pixel_values=inputs["pixel_values"],
-                                     max_new_tokens=140, num_beams=1, do_sample=False)
-            out = proc.batch_decode(ids, skip_special_tokens=False)[0]
-            txt = proc.post_process_generation(out, task=TASK, image_size=img.size)[TASK]
+            txt = capmod.caption(crop)
             caps.append({"t": round(fr[i].t, 2), "caption": txt.strip()})
             fr[i].img = None
-        dst.write_text(json.dumps({"video": name, "model": MODEL, "zone": [int(v) for v in zone] if zone else None,
+        dst.write_text(json.dumps({"video": name, "model": capmod.MODEL_ID, "zone": [int(v) for v in zone] if zone else None,
                                    "captions": caps}, ensure_ascii=False, indent=1))
         d = time.time() - t0
         print(f"{name}: {len(caps)} подписей за {d:.0f}с ({d/max(1,len(caps)):.1f} с/кадр)",
