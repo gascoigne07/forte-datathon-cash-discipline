@@ -12,6 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from app import caption, rules  # noqa: E402
 from evaluate import LABELS  # noqa: E402
 
+# Х-47 побайтово равен Х-4, Х-48 равен Х-5 (md5 совпадает). Оценивать их как
+# отдельные ролики — значит дважды засчитывать один и тот же результат и искажать
+# метрику: один раз это уже привело к ложному выводу об улучшении.
+DUPLICATES = {"Х-47", "Х-48"}
+
 
 CAPS_DIR = "data/captions"
 
@@ -44,7 +49,7 @@ def main():
     tp = fp = fn = tn = 0; errs = []; rows = []
     for p in sorted(glob.glob(f"{CAPS_DIR}/*.caps.json")):
         name = Path(p).stem.replace(".caps", "")
-        if name not in LABELS:
+        if name not in LABELS or name in DUPLICATES:
             continue
         series, _ = series_for(name)
         if not series:
@@ -62,7 +67,7 @@ def main():
     for r in rows:
         print(f"{r[0]:7s} {r[1]:2s} {r[2]:8s} {r[3]:9s} {r[4]}")
     n = tp + fp + fn + tn
-    print(f"\nTP={tp} FP={fp} FN={fn} TN={tn}  точность={100*(tp+tn)/max(1,n):.0f}%  (роликов {n})")
+    print(f"\nTP={tp} FP={fp} FN={fn} TN={tn}  точность={100*(tp+tn)/max(1,n):.0f}%  (уникальных роликов {n})")
     print(f"recall={100*tp/max(1,tp+fn):.0f}%  specificity={100*tn/max(1,tn+fp):.0f}%")
     if errs:
         errs.sort(); print(f"таймкод: медиана {errs[len(errs)//2]:.1f}с, ≤3с у {100*sum(e<=3 for e in errs)/len(errs):.0f}%")
