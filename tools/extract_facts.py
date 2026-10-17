@@ -7,7 +7,8 @@ import argparse, json, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "service"))
-from app import objects, perception, vlm  # noqa: E402
+import vlm_qwen25_measured as vlm
+from app import objects, perception  # noqa: E402
 
 
 def main():

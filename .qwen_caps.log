@@ -1,0 +1,4 @@
+W1017 19:29:47.059000 75004 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 3121.59it/s]
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 4127.38it/s]
+описатель: mlx-community/Qwen3-VL-4B-Instruct-4bit (бэкенд qwen)
