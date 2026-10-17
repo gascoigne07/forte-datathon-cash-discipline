@@ -8,6 +8,7 @@ run_pipeline.py вызывает pipeline.analyze в своём процессе
     .venv/bin/python tools/run_service.py <base_url> <api_key> <видео> [...] [--par 2]
 """
 import json
+import os
 import sys
 import threading
 import time
@@ -52,7 +53,7 @@ def main():
     if "--par" in args:
         i = args.index("--par"); par = int(args[i + 1]); del args[i:i + 2]
     base, key, videos = args[0].rstrip("/"), args[1], [Path(v) for v in args[2:]]
-    out_dir = Path("data/runs"); out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(os.environ.get("RUNS_DIR", "data/runs")); out_dir.mkdir(parents=True, exist_ok=True)
     queue = list(videos)
     lock = threading.Lock()
 
