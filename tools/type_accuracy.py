@@ -25,7 +25,10 @@ from app import rules  # noqa: E402
 from eval_caps import DUPLICATES, series_for  # noqa: E402
 from evaluate import LABELS  # noqa: E402
 
-CSV = Path("annotation/labels.csv")
+# Напарник возвращает .xlsx (его собирает tools/make_labeling_xlsx.py): CSV в
+# Excel на macOS открывается в MacRoman и кириллица рассыпается. Читаем оба формата.
+SOURCES = [Path("annotation/РАЗМЕТКА.xlsx"), Path("annotation/labels.xlsx"),
+           Path("annotation/labels.csv")]
 # код в разметке -> ключ правила в сервисе. Несколько кодов могут вести к одному
 # ключу: сервис описывает наблюдаемое, а не юридическую квалификацию.
 MAP = {
@@ -42,19 +45,48 @@ MAP = {
 }
 
 
+def source() -> Path | None:
+    return next((p for p in SOURCES if p.exists()), None)
+
+
+def _from_xlsx(path: Path) -> list[dict]:
+    from openpyxl import load_workbook
+    wb = load_workbook(path, data_only=True)
+    ws = wb["разметка"] if "разметка" in wb.sheetnames else wb[wb.sheetnames[0]]
+    # Колонки в файле для человека названы по-русски; приводим к ключам разметки
+    # по порядку, а не по заголовку: заголовок напарник может переписать.
+    keys = ["video", "sec", "type", "what", "cue", "conf"]
+    out = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or not row[0]:
+            continue
+        out.append({k: (str(v).strip() if v is not None else "")
+                    for k, v in zip(keys, row)})
+    return out
+
+
+def _from_csv(path: Path) -> list[dict]:
+    # utf-8-sig снимает BOM, если файл пересохраняли из Excel
+    with path.open(encoding="utf-8-sig") as fh:
+        return [dict(r) for r in csv.DictReader(fh, delimiter=";")]
+
+
 def load_labels() -> dict[str, list[dict]]:
+    path = source()
+    raw = _from_xlsx(path) if path.suffix == ".xlsx" else _from_csv(path)
     rows: dict[str, list[dict]] = {}
-    with CSV.open(encoding="utf-8") as fh:
-        for r in csv.DictReader(fh, delimiter=";"):
-            name = (r.get("video") or "").strip()
-            if name:
-                rows.setdefault(name, []).append(r)
+    for r in raw:
+        name = (r.get("video") or "").strip()
+        if name:
+            rows.setdefault(name, []).append(r)
     return rows
 
 
 def main():
-    if not CSV.exists():
-        print(f"{CSV} не найден — тип события мерить нечем.")
+    if source() is None:
+        print("Разметки нет — тип события мерить нечем. Ожидается один из файлов:")
+        for p in SOURCES:
+            print(f"  {p}")
         print("Разметка типов делается руками по annotation/LABELING.md.")
         print("Без неё критерий 3 (корректность классификации, 15 баллов) оценивается")
         print("только качественно: сервис выдаёт тип из закрытого списка в TYPES,")
@@ -62,7 +94,7 @@ def main():
         return 1
 
     gold = load_labels()
-    hit = miss = wrong = 0
+    hit = miss = wrong = empty = 0
     confusion: Counter = Counter()
     uncaught: Counter = Counter()
     print(f"{'ролик':8s} {'размечено':18s} {'выдано сервисом':34s} итог")
@@ -76,6 +108,9 @@ def main():
         got = {e.key for e in rules.detect_events(series, tracks=tracks)}
         for row in gold[name]:
             code = (row.get("type") or "").strip()
+            if not code:                       # строка ещё не заполнена
+                empty += 1
+                continue
             want = MAP.get(code)
             if want is None:
                 print(f"{name:8s} {code:18s} {'—':34s} код не из списка LABELING.md")
@@ -98,10 +133,11 @@ def main():
 
     total = hit + wrong + miss
     if not total:
-        print("\nв labels.csv нет строк с типом, пригодных для сверки")
+        print(f"\nв разметке нет заполненных типов (пустых строк: {empty})")
         return 1
     print(f"\nтип совпал: {hit} из {total} ({100 * hit / total:.0f} %), "
-          f"не тот тип: {wrong}, пропусков: {miss}")
+          f"не тот тип: {wrong}, пропусков: {miss}"
+          + (f", ещё не заполнено строк: {empty}" if empty else ""))
     if confusion:
         print("\nматрица путаницы (размечено -> выдано):")
         for (a, b), n in confusion.most_common():
