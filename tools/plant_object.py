@@ -67,6 +67,9 @@ def main():
     ap.add_argument("--clean", nargs="+", default=["Х-43", "Х-29", "Х-21", "Х-3"])
     ap.add_argument("--objects", nargs="+", default=["стакан_Х-46", "сумка_Х-40", "банка_Х-24"])
     ap.add_argument("--out", default="data/planted")
+    ap.add_argument("--scale", type=float, default=1.0,
+                    help="масштаб вклеиваемого предмета: прямая проверка гипотезы "
+                         "о пределе разрешения")
     a = ap.parse_args()
     out_dir = Path(a.out); out_dir.mkdir(parents=True, exist_ok=True)
     manifest = []
@@ -91,6 +94,9 @@ def main():
 
         key = list(patches)[ci % len(patches)]
         patch = patches[key]
+        if a.scale != 1.0:
+            patch = cv2.resize(patch, None, fx=a.scale, fy=a.scale,
+                               interpolation=cv2.INTER_LANCZOS4)
         ph, pw = patch.shape[:2]
         # кладём в правую половину столешницы, подальше от счётной машины
         px = int(zx1 + (zx2 - zx1) * 0.55)
@@ -102,7 +108,8 @@ def main():
         n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
         W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         plant_sec = round((n / fps) * 0.35, 1)        # предмет появляется на 35 % длительности
-        dst = out_dir / f"{name}__planted_{key.split('_')[0]}.mov"
+        tag = key.split('_')[0] + ("" if a.scale == 1.0 else f"_x{a.scale:g}")
+        dst = out_dir / f"{name}__planted_{tag}.mov"
         vw = cv2.VideoWriter(str(dst), cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
         i = 0
         while True:
@@ -114,7 +121,8 @@ def main():
             vw.write(img); i += 1
         cap.release(); vw.release()
         manifest.append({"video": dst.name, "base": name, "object": key.split("_")[0],
-                         "plant_sec": plant_sec, "pos": [px, py]})
+                         "plant_sec": plant_sec, "pos": [px, py], "scale": a.scale,
+                         "patch_px": [int(patch.shape[1]), int(patch.shape[0])]})
         print(f"{dst.name}: предмет «{key.split('_')[0]}» с {plant_sec} с, позиция ({px},{py})",
               file=sys.stderr)
 

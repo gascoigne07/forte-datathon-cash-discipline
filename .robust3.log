@@ -1,0 +1,17 @@
+W1017 21:51:09.333000 79894 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 14328.75it/s]
+Loading weights:   0%|          | 0/917 [00:00<?, ?it/s]Loading weights:  19%|█▊        | 171/917 [00:00<00:00, 1607.88it/s]Loading weights:  36%|███▌      | 332/917 [00:00<00:00, 1458.41it/s]Loading weights:  52%|█████▏    | 479/917 [00:00<00:00, 1205.41it/s]Loading weights:  66%|██████▌   | 604/917 [00:01<00:00, 368.96it/s] Loading weights:  89%|████████▉ | 815/917 [00:01<00:00, 586.21it/s]Loading weights: 100%|██████████| 917/917 [00:01<00:00, 579.91it/s]
+Х-46__compress_28          violation        71с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
+Х-46__compress_34          no_violation     54с кадров= 19 разметка=[11]    
+Х-46__blur_s08             violation        58с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
+Х-46__blur_s12             violation        60с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@11
+Х-46__gray                 violation        62с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
+[mov,mp4,m4a,3gp,3g2,mj2 @ 0x771ee2a80] moov atom not found
+OpenCV: Couldn't read video stream from file "data/aug/Х-46__res060.mov"
+[mov,mp4,m4a,3gp,3g2,mj2 @ 0x771ee2a80] moov atom not found
+OpenCV: Couldn't read video stream from file "data/aug/Х-46__res060.mov"
+Х-46__res060: ОШИБКА ValueError: не удалось декодировать видео
+Х-46__rot+15               violation        58с кадров= 20 разметка=[11]    Напитки или еда на рабочем м@9
+Х-46__mirror_rot           violation        76с кадров= 27 разметка=[11]    Напитки или еда на рабочем м@11
+Х-43__planted_стакан_x1.5  violation        66с кадров= 22 разметка=[]      Напитки или еда на рабочем м@17
+Х-43__planted_стакан_x2    violation        82с кадров= 22 разметка=[]      Напитки или еда на рабочем м@18
