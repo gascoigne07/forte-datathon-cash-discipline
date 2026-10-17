@@ -1,0 +1,72 @@
+{
+ "video": "Х-24",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  69,
+  330,
+  373,
+  537
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hand and appears to be reading it. There are two cans of soda on the desk next to her. The desk is made of wood and there are other office supplies scattered around it. The background shows a white wall and a gray carpeted floor."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a pink blazer and is holding a piece of paper in her hand. On the desk, there is a laptop, a telephone, and a printer. There are also two cans of soda and a black printer on the desk. The desk is in an open space with a gray carpet and a white filing cabinet in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 2.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a pink blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a book in her hands and appears to be reading it intently. There are two cans of soda on the desk next to the laptop. The desk is in an open office space with a gray carpet and a white filing cabinet in the background."
+  },
+  {
+   "t": 3.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a pink blazer and appears to be working on a laptop. On the desk, there is a black printer, a black telephone, and a black coffee cup. The woman is holding a piece of paper in her hand and seems to be typing on it. There is a white filing cabinet on the left side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 4.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a pink blouse and has long brown hair tied up in a ponytail. On the desk, there is a laptop, a telephone, a printer, and a small black box. The woman is looking at a tablet and appears to be working on a project. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 5.0,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and appears to be working on a laptop. On the desk, there is a black printer, a black phone, and a black tablet. There are also two cans of soda and a small black device on the desk. The desk is in an open space with a gray carpeted floor and a white filing cabinet in the background. The woman is leaning over the desk and seems to be focused on her work."
+  },
+  {
+   "t": 6.0,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, a printer, a book, and a few other office supplies. The desk is in front of a glass door and there is an office chair in the background. A person is standing behind the desk and appears to be in the process of setting up the desk. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 7.0,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, a printer, a book, and a few other office supplies. The desk is in a corner of the room with a white filing cabinet on the left side and a gray carpet on the floor. A person is standing in the background, and there are other office furniture visible. The image appears to be taken from a high angle, looking down on the desk."
+  },
+  {
+   "t": 8.0,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a phone, a printer, a notebook, and a few other office supplies. The desk is in front of a glass door and there is an office chair in the background. The floor is covered with a gray carpet. The image appears to be taken from a high angle, looking down on the desk."
+  },
+  {
+   "t": 9.0,
+   "caption": "The image shows an office desk with a laptop, a printer, and a phone on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two cables. There is also a small black box and a green can on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet in the background."
+  },
+  {
+   "t": 10.0,
+   "caption": "The image shows an office desk with a laptop, a printer, and a phone on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two cables. There is also a small black box and a green can on the desk next to the laptop. The background shows a glass door and a white wall. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 11.0,
+   "caption": "The image shows an office desk with a laptop, a printer, a phone, and a small plant on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two wires. There is also a small black box and a green plant on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet in the background."
+  },
+  {
+   "t": 12.0,
+   "caption": "The image shows an office desk with a laptop, a printer, and a phone on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two cables. There is also a small black box and a green can on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet in the background."
+  },
+  {
+   "t": 13.0,
+   "caption": "The image shows an office desk with a laptop, a printer, and a phone on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two wires. There is also a small black box and a green can on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet in the background."
+  },
+  {
+   "t": 14.0,
+   "caption": "The image shows an office desk with a laptop, a printer, and a phone on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The printer is black and is placed on the left side of the desk. The phone is on the right side and is connected to the desk with two cables. There is also a small black box and a green can on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet in the background."
+  }
+ ]
+}

@@ -1,0 +1,96 @@
+{
+ "video": "Х-15",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  9,
+  330,
+  330,
+  523
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink shirt and is holding a green folder in her hand. On the desk, there is a black printer, a black telephone, and a black laptop. The desk appears to be in an open space with a gray carpeted floor and a white wall in the background. The woman is looking at the camera with a serious expression on her face."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and is holding a green vase in her hand. On the desk, there is a black printer, a black telephone, and a laptop. The desk is in an open space with a gray carpeted floor and white walls. The woman appears to be working on a computer or a printer."
+  },
+  {
+   "t": 2.01,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and is holding a green object in her hands. On the desk, there is a laptop, a telephone, and a printer. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman appears to be working on a computer or a printer, as there are other office supplies scattered around the desk."
+  },
+  {
+   "t": 3.01,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and is holding a green object in her hands. On the desk, there is a laptop, a telephone, and a printer. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman appears to be working on a project or working on something."
+  },
+  {
+   "t": 4.01,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and is holding a green plant in her hands. On the desk, there is a black printer, a black telephone, and a laptop. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman appears to be working on her phone and is looking at it intently."
+  },
+  {
+   "t": 5.02,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has a green bag in her hand. On the desk, there is a laptop, a telephone, and a printer. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman appears to be working on her laptop and is looking at the camera."
+  },
+  {
+   "t": 6.02,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink cardigan and a black top. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a green folder and appears to be working on a piece of paper. The desk is in an open space with a gray carpeted floor and a white wall in the background."
+  },
+  {
+   "t": 7.02,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and a black top. On the desk, there is a laptop, a telephone, and a printer. The desk is in an open space with a gray carpeted floor and white walls. The woman is leaning over the desk and appears to be working on her laptop. There is a green folder on the desk next to the printer."
+  },
+  {
+   "t": 8.03,
+   "caption": "The image shows a woman in a pink sweater standing behind a wooden desk in an office. She is leaning over the desk with her hands on the desk and appears to be working on a laptop. On the desk, there is a black printer, a green folder, and a black telephone. The desk is in an open space with a gray carpeted floor and a white wall in the background. There is also a white filing cabinet on the right side of the image."
+  },
+  {
+   "t": 9.03,
+   "caption": "The image shows an office desk with a computer monitor, a laptop, a phone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The phone is black and the printer is black. There is a green folder on the desk next to the laptop. The office has a gray carpeted floor and a white wall in the background."
+  },
+  {
+   "t": 10.03,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor, a black printer, a green folder, and a black telephone. There is also a laptop and a pair of scissors on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. A person's legs can be seen in the top right corner of the image."
+  },
+  {
+   "t": 11.04,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a phone, and a printer. The desk is made of light-colored wood and has a rectangular shape. There is also a green bag on the desk next to the laptop. The background shows a glass door and a white wall. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 12.04,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a phone, and a printer. The desk is made of light-colored wood and has a rectangular shape. There is also a green folder and a black printer on the desk. The background shows a glass door and a white wall. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 13.04,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a phone, and a printer. The desk is made of light-colored wood and has a rectangular shape. There is also a green bag on the desk next to the laptop. The printer is black and appears to be a desktop computer. The phone is a black corded phone with a silver receiver. The laptop is open and the screen is turned on. There are two white cabinets on either side of the desk. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 14.04,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On the desk, there is a black computer monitor, a black printer, a green office bag, and a black telephone. There is also a laptop and a phone on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. The image appears to be taken from a high angle, looking down on the office desk."
+  },
+  {
+   "t": 15.05,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On the desk, there is a black computer monitor, a black printer, a green office bag, and a black telephone. There is also a laptop and a phone on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. The image appears to be taken from a high angle, looking down on the office desk."
+  },
+  {
+   "t": 16.05,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On the desk, there is a black computer monitor, a black printer, a green folder, and a black telephone. There is also a laptop and a pair of scissors on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. The image appears to be taken from a high angle, looking down on the office desk."
+  },
+  {
+   "t": 17.05,
+   "caption": "The image shows an office desk with a computer monitor, a laptop, a phone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. The laptop is open and the screen is turned on. The phone is black and the printer is black. There is a green folder on the desk next to the laptop. The floor is covered with a gray carpet and there is a white filing cabinet on the right side of the image. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 18.06,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On the desk, there is a black computer monitor, a black printer, a green bag, and a black telephone. There is also a laptop and a phone on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. The image appears to be taken from a high angle, looking down on the office desk."
+  },
+  {
+   "t": 19.06,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On the desk, there is a black computer monitor, a black printer, a green folder, and a black telephone. There is also a laptop and a phone on the desk. The floor is covered with a gray carpet and there are white cabinets in the background. The image appears to be taken from a high angle, looking down on the office desk."
+  },
+  {
+   "t": 20.06,
+   "caption": "The image shows an office desk with a computer monitor, a laptop, a phone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. The computer monitor is black and the laptop is open. The phone is black with a cord attached to it. There is also a green folder on the desk. The floor is covered with a gray carpet and there is a white filing cabinet on the right side of the image. The background shows a glass door and a white wall."
+  }
+ ]
+}

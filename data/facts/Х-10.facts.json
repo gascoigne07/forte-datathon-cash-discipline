@@ -1,0 +1,235 @@
+{
+ "video": "Х-10",
+ "upscale": 1.0,
+ "model": "mlx-community/Qwen2.5-VL-7B-Instruct-4bit",
+ "series": [
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банковская карта, лист бумаги",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 0.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банковская карта, лист бумаги",
+    "in_hands": "банковская карта",
+    "door": ""
+   },
+   "_t": 0.5,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, банкноты, пачка денег",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 1.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, банкноты, пачка денег",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 2.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, банкноты, пачка денег",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 4.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банкноты",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 4.5,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": true,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банковская карта",
+    "in_hands": "банкноты",
+    "door": ""
+   },
+   "_t": 6.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банковская карта",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 8.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, паспорт",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 10.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, паспорт",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 12.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": true,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, паспорт",
+    "in_hands": "банкноты",
+    "door": ""
+   },
+   "_t": 14.0,
+   "_persons_detr": 1
+  },
+  {
+   "people_in_cabin": 1,
+   "teller_present": true,
+   "cash_on_desk": true,
+   "cash_in_hands": false,
+   "machine_in_use": false,
+   "drink_or_food": false,
+   "personal_bag": false,
+   "sealed_bag": false,
+   "door_open": false,
+   "what_happens": "",
+   "_raw": {
+    "on_desk": "ноутбук, телефон, счётная машина, пачка денег, банковская карта, паспорт",
+    "in_hands": "ничего",
+    "door": ""
+   },
+   "_t": 15.5,
+   "_persons_detr": 1
+  }
+ ]
+}

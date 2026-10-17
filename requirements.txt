@@ -1,0 +1,15 @@
+# Зафиксированы версии, на которых измерялось качество (см. README, раздел 4).
+torch==2.14.1
+torchvision
+transformers==5.20.1
+timm
+einops
+pillow
+numpy
+scipy
+scikit-learn
+opencv-python-headless
+fastapi
+uvicorn[standard]
+python-multipart
+huggingface_hub

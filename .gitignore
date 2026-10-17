@@ -1,0 +1,23 @@
+# окружение и веса
+.venv/
+__pycache__/
+*.pyc
+
+# секреты и рантайм
+.api_key
+.srv.log
+.tunnel.log
+
+# тяжёлые артефакты прогонов: воспроизводятся скриптами из tools/
+data/aug/
+data/emb/
+data/grid/
+data/roi_dump/
+data/objdump/
+data/deskdump/
+data/uploads/
+
+# выгруженные тексты НПА оставляем (нужны для сверки цитат),
+# но служебные дампы JS-бандла adilet — нет
+kb/bundle.js
+kb/doc.js

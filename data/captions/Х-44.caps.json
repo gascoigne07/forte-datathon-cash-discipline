@@ -1,0 +1,96 @@
+{
+ "video": "Х-44",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  19,
+  290,
+  281,
+  583
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The woman appears to be focused on her work, with her hands resting on the desk and her eyes closed. The office has a modern design with a glass door in the background."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is looking down at the screen. There is a blue office chair next to the desk and a white desk in the background. The office has a modern design with a glass door and a gray carpet."
+  },
+  {
+   "t": 2.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is looking down at the screen. There is a blue office chair next to the desk and a white table in the foreground. The background shows a glass door and a gray cabinet."
+  },
+  {
+   "t": 3.0,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hand and appears to be in the process of printing or scanning it. There is a blue office chair next to the desk and a glass door in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 4.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. The desk is in an open space with a glass door in the background. On the desk, there is a laptop, a telephone, and a printer. The woman is using the printer to print a document on the paper. There is a blue office chair next to the desk and a white cabinet on the right side of the image. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 5.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white lab coat and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be deep in thought, with her hands resting on her lap and a serious expression on her face."
+  },
+  {
+   "t": 6.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 7.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 8.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 9.01,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 10.02,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is typing on the keyboard and appears to be working on a computer. There is a blue office chair next to the desk and a white cabinet in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 11.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hand and appears to be working on her laptop. There is a blue office chair next to the desk and a white cabinet in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 12.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a pen and appears to be working on the printer. There is a blue office chair next to the desk and a white cabinet in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 13.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a pen and appears to be working on the printer. There is a blue office chair next to the desk and a white cabinet in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 14.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hand and appears to be looking at it intently. There is a blue office chair next to the desk and a white table in the foreground. The background shows a glass door and a gray cabinet."
+  },
+  {
+   "t": 15.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hands and appears to be working on a project. There is a blue office chair next to the desk and a glass door in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 16.03,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a piece of paper in her hand and appears to be working on a project. There is a blue office chair next to the desk and a glass door in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 17.03,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is looking down at her phone and appears to be typing on it. There is a blue office chair next to the desk and a white desk in the background. The office has a modern design with a glass door and a gray wall."
+  },
+  {
+   "t": 18.03,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blazer and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is looking down at a piece of paper in her hand and appears to be typing on it. There is a blue office chair next to the desk and a white table in the foreground. The background shows a glass door and a gray cabinet."
+  },
+  {
+   "t": 19.03,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is looking down at her phone and appears to be typing on the keyboard. There is a blue office chair next to the desk and a white table in the foreground. The background shows a glass door and a gray cabinet."
+  },
+  {
+   "t": 20.03,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. There is also a blue office chair in front of the desk. The office has a large window with a view of a city skyline in the background. The woman appears to be focused on her work."
+  }
+ ]
+}

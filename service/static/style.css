@@ -1,0 +1,882 @@
+/* ===========================================================
+   Анализ видео кассовой зоны — стили
+   Палитра: тёмно-синий/серый, минимализм, без ярких "AI" акцентов
+   =========================================================== */
+
+/* Нативный атрибут hidden должен побеждать авторские display:flex/grid —
+   иначе лайтбокс, блок ошибки и строка файла видны при загрузке страницы. */
+[hidden] { display: none !important; }
+
+:root {
+  --color-bg: #f3f5f8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f8fa;
+  --color-border: #e1e5ec;
+  --color-border-strong: #c7cedb;
+
+  --color-navy-900: #0f2440;
+  --color-navy-800: #16315a;
+  --color-navy-700: #1d3f72;
+  --color-navy-600: #2a5090;
+  --color-text: #1b2432;
+  --color-text-muted: #5b6676;
+  --color-text-faint: #8b95a5;
+
+  --color-success: #1e8e5a;
+  --color-success-bg: #eaf7ef;
+  --color-success-border: #bfe6cf;
+
+  --color-danger: #c23b3b;
+  --color-danger-bg: #fdecec;
+  --color-danger-border: #f3c3c3;
+
+  --color-warning-bg: #fff6e6;
+  --color-warning-border: #f0d9a6;
+  --color-warning-text: #8a6116;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --shadow-card: 0 1px 2px rgba(15, 36, 64, 0.06), 0 4px 16px rgba(15, 36, 64, 0.05);
+  --shadow-hover: 0 4px 10px rgba(15, 36, 64, 0.1);
+
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+/* ===================== Шапка ===================== */
+
+.header {
+  background: var(--color-navy-900);
+  color: #fff;
+}
+
+.header__inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.header__title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+.header__subtitle {
+  font-size: 13px;
+  color: #a9b6cc;
+  margin-top: 2px;
+}
+
+/* Поле API-ключа в шапке */
+
+.apikey {
+  min-width: 260px;
+}
+
+.apikey__label {
+  display: block;
+  font-size: 12px;
+  color: #a9b6cc;
+  margin-bottom: 5px;
+}
+
+.apikey__row {
+  display: flex;
+  gap: 6px;
+}
+
+.apikey__input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.apikey__input::placeholder {
+  color: #7f8da3;
+}
+
+.apikey__input:focus {
+  border-color: #6f9bd6;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.apikey__toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sm);
+  color: #cfd8e8;
+  width: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.apikey__toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.apikey__hint {
+  font-size: 11px;
+  color: #7f8da3;
+  margin-top: 5px;
+}
+
+/* ===================== Основной контейнер ===================== */
+
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px;
+}
+
+.card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-navy-800);
+  margin: 0 0 16px;
+}
+
+/* ===================== Блок загрузки ===================== */
+
+.dropzone {
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  outline: none;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+  border-color: var(--color-navy-600);
+  background: var(--color-surface-muted);
+}
+
+.dropzone.dropzone--drag {
+  border-color: var(--color-navy-600);
+  background: #eef3fb;
+}
+
+.dropzone.dropzone--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dropzone__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-muted);
+}
+
+.dropzone__icon {
+  color: var(--color-navy-600);
+}
+
+.dropzone__text strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.dropzone__text span {
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+/* Карточка выбранного файла внутри dropzone */
+
+.dropzone__file {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  color: var(--color-navy-700);
+}
+
+.dropzone__file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dropzone__file-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropzone__file-size {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  margin-top: 2px;
+}
+
+.dropzone__file-remove {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.dropzone__file-remove:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+.upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.upload-actions__note {
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+/* ===================== Кнопки ===================== */
+
+.btn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn--primary {
+  background: var(--color-navy-800);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-navy-700);
+}
+
+.btn--secondary {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+  color: var(--color-navy-800);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: #ebeef3;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+
+/* ===================== Прогресс обработки ===================== */
+
+.progress-bar {
+  height: 10px;
+  background: var(--color-surface-muted);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-navy-600), var(--color-navy-800));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.progress-info__stage {
+  color: var(--color-text-muted);
+}
+
+.progress-info__percent {
+  font-weight: 700;
+  color: var(--color-navy-800);
+  font-size: 15px;
+}
+
+.progress-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--color-text-faint);
+  flex-wrap: wrap;
+}
+
+.progress-meta strong {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* ===================== Блок ошибки ===================== */
+
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+
+.error-card__icon {
+  font-size: 22px;
+  color: var(--color-danger);
+  line-height: 1;
+}
+
+.error-card__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-danger);
+  margin-bottom: 4px;
+}
+
+.error-card__text {
+  font-size: 13px;
+  color: #7a2b2b;
+}
+
+/* ===================== Блок вердикта ===================== */
+
+.verdict {
+  border-radius: var(--radius-lg);
+  padding: 28px 26px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.verdict--ok {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+}
+
+.verdict--violation {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+}
+
+.verdict__icon {
+  font-size: 34px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.verdict--ok .verdict__icon {
+  color: var(--color-success);
+}
+
+.verdict--violation .verdict__icon {
+  color: var(--color-danger);
+}
+
+.verdict__title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.verdict--ok .verdict__title {
+  color: var(--color-success);
+}
+
+.verdict--violation .verdict__title {
+  color: var(--color-danger);
+}
+
+.verdict__subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ===================== Таймлайн ===================== */
+
+.timeline {
+  position: relative;
+  height: 54px;
+  margin: 10px 4px 2px;
+}
+
+.timeline__track {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+
+.timeline__mark {
+  position: absolute;
+  top: 10px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.timeline__mark-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--color-danger-border);
+  transition: transform 0.15s;
+}
+
+.timeline__mark:hover .timeline__mark-dot {
+  transform: scale(1.25);
+}
+
+.timeline__mark-label {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+.timeline__bounds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-faint);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+/* ===================== Действия с результатом ===================== */
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ===================== Список нарушений ===================== */
+
+.violations {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.violation-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px;
+  scroll-margin-top: 20px;
+}
+
+.violation-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.violation-card__type {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.violation-card__timecode {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--color-navy-900);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.violation-card__timecode small {
+  font-weight: 400;
+  color: #a9b6cc;
+  font-size: 11px;
+}
+
+.violation-card__confidence {
+  margin-bottom: 14px;
+}
+
+.confidence__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 5px;
+}
+
+.confidence__value {
+  font-weight: 700;
+  color: var(--color-navy-800);
+}
+
+.confidence__bar {
+  height: 7px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.confidence__bar-fill {
+  height: 100%;
+  background: var(--color-navy-600);
+  border-radius: 999px;
+}
+
+.violation-card__description {
+  font-size: 14px;
+  color: var(--color-text);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* Блок "Норматив" */
+
+.rule-box {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.rule-box__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+  margin-bottom: 8px;
+}
+
+.rule-box__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-navy-800);
+  margin-bottom: 4px;
+}
+
+.rule-box__requisites {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.rule-box__clause {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.rule-box__quote {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--color-text);
+  border-left: 3px solid var(--color-navy-600);
+  padding: 8px 14px;
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 10px;
+}
+
+.rule-box__link {
+  font-size: 12px;
+  color: var(--color-navy-600);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rule-box__link:hover {
+  text-decoration: underline;
+}
+
+/* Кадры-доказательства */
+
+.evidence-frames__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.evidence-frames {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.evidence-frame {
+  width: 140px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  cursor: zoom-in;
+  position: relative;
+  background: var(--color-surface-muted);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.evidence-frame:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.evidence-frame img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+
+.evidence-frame__time {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(15, 24, 36, 0.75);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ===================== Лайтбокс ===================== */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 16, 28, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px;
+}
+
+.lightbox__img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ===================== Подвал ===================== */
+
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-faint);
+  padding: 20px 24px 36px;
+}
+
+/* ===================== Адаптивность ===================== */
+
+@media (max-width: 720px) {
+  .header__inner {
+    flex-direction: column;
+  }
+
+  .apikey {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main {
+    padding: 20px 16px 48px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .verdict {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 18px;
+  }
+
+  .violation-card__header {
+    flex-direction: column;
+  }
+
+  .violation-card__timecode {
+    align-self: flex-start;
+  }
+
+  .evidence-frame {
+    width: calc(50% - 5px);
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+
+  .result-actions .btn {
+    width: 100%;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .evidence-frame {
+    width: 100%;
+  }
+}
+
+/* Пункт, который мы не смогли подтвердить дословно, помечаем явно:
+   жюри штрафует за неподтверждённые юридические утверждения (критерий 4). */
+.rule-box__unverified {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-left: 3px solid #d98324;
+  background: #fff6e9;
+  color: #8a5a15;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: 0 6px 6px 0;
+}

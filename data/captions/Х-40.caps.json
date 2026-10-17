@@ -1,0 +1,112 @@
+{
+ "video": "Х-40",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  43,
+  323,
+  351,
+  563
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows an office space with a wooden desk and a blue office chair. The desk is in the center of the room and has a laptop, a telephone, and a printer on it. There are two white chairs on either side of the desk. The floor is covered with a gray carpet and there is a glass door in the background. The room appears to be modern and clean."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests on the right side of the desk. The chair is positioned next to the desk and there is a glass door in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 2.01,
+   "caption": "The image shows an office space with a wooden desk and a blue office chair. The desk is in the center of the room and has a laptop, a telephone, and a printer on it. There are two white chairs on either side of the desk and the floor is covered with a gray carpet. The room has a large window on the left side and a white wall on the right side."
+  },
+  {
+   "t": 3.01,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests on the right side of the desk. The chair is positioned next to the desk and there is a glass door on the left side. The floor is covered with a gray carpet. The image appears to be taken from a high angle, looking down on the desk from the chair."
+  },
+  {
+   "t": 4.02,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests on the right side of the desk. The chair is positioned next to the desk and there is a glass door on the left side. The floor is covered with a gray carpet. The image appears to be taken from a high angle, looking down on the desk from above."
+  },
+  {
+   "t": 5.02,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests on the right side of the desk. The chair has a black armrest and a curved backrest. The floor is covered with a gray carpet and there is a glass door in the background. The room appears to be modern and well-lit."
+  },
+  {
+   "t": 6.02,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests in front of the desk. The chair has a black armrest and a curved backrest. The floor is covered with a gray carpet and there is a glass door in the background. The room appears to be modern and well-lit."
+  },
+  {
+   "t": 7.03,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests in front of the desk. The chair has a black armrest and a curved backrest. The floor is covered with a gray carpet and there is a glass door in the background. A person is standing near the desk, wearing a beige shirt and carrying a bag."
+  },
+  {
+   "t": 8.03,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a white chair with a blue seat and armrests on the right side of the desk. The chair has a black armrest and a curved backrest. On the left side, there is a small table with a white tablecloth. The floor is covered with a gray carpet and there are glass doors in the background."
+  },
+  {
+   "t": 9.04,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a modern design. There is a blue office chair with a black armrest on the right side of the desk. A person is standing in the background, holding a phone and looking at the desk with interest. The floor is covered with a gray carpet and there is a white wall on the left side."
+  },
+  {
+   "t": 10.04,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. There is a blue office chair in front of the desk and a white desk on the right side of the image. A person is standing behind the desk, holding a clipboard and appears to be working on the laptop. The desk is made of wood and has a modern design with a light brown finish. The chair has a black armrest and a blue seat. The background shows a glass door and a gray carpeted floor."
+  },
+  {
+   "t": 11.04,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a blue office chair with a black armrest on the right side of the desk. The chair is upholstered in a light blue fabric and has black wheels. The floor is covered with a gray carpet and there is a white wall in the background. A person is standing in front of the computer desk and appears to be working on the laptop."
+  },
+  {
+   "t": 12.05,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a blue office chair with a black armrest on the right side of the desk. The chair is upholstered in a light blue fabric and has black wheels. The floor is covered with a gray carpet and there is a white wall in the background. A person is standing behind the desk, looking at the laptop screen."
+  },
+  {
+   "t": 13.05,
+   "caption": "The image shows a modern office setup with a wooden desk and a blue office chair. The desk is in an open space with a glass door on the left side and a white wall on the right side. On the desk, there is a laptop, a telephone, a printer, and a few other office supplies. The chair has a black armrest and a black seat with a blue cushion. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 14.06,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. The desk is made of light-colored wood and has a rectangular shape. There is a blue office chair with a black armrest on the right side of the desk. The chair has a curved backrest and armrests. On the desk, there is also a small plant in a pot and a few other office supplies. The background shows a gray carpeted floor and a white wall."
+  },
+  {
+   "t": 15.06,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. There is also a beige bag on the desk. A blue office chair is placed next to the desk and a person is standing in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 16.06,
+   "caption": "The image shows a modern office setup with a wooden desk and a blue office chair. On the desk, there is a laptop, a telephone, and a printer. There is also a beige bag on the desk. A person's hand is visible in the top right corner of the image, holding a piece of paper. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 17.07,
+   "caption": "The image shows an office desk with a laptop, a telephone, and a printer on it. There is also a beige bag on the desk. A blue office chair with a black armrest is placed next to the desk, and there is a person standing in the background. The desk is made of wood and has a modern design. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 18.07,
+   "caption": "The image shows a woman standing at a wooden desk in an office. She is wearing a white blouse and black pants and is bending over the desk, looking at a laptop and a beige bag. On the desk there is a black telephone, a black printer, and a black fax machine. There is also a blue office chair with a black armrest and a white seat. The desk is in an open space with a gray carpeted floor and a glass door in the background."
+  },
+  {
+   "t": 19.08,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a brown bag and appears to be working on her laptop. There is a blue office chair next to the desk. The office has a gray carpet and a white wall with a window in the background."
+  },
+  {
+   "t": 20.08,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a phone in her hand and appears to be typing on the keyboard. There is a blue office chair next to the desk. The office has a gray carpet and a white wall in the background."
+  },
+  {
+   "t": 21.08,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a phone in her hand and appears to be typing on the keyboard. There is a blue office chair next to the desk. The floor is covered with a gray carpet and there are other office chairs in the background."
+  },
+  {
+   "t": 22.09,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is holding a phone in her hand and appears to be typing on the keyboard. There is a blue office chair next to the desk. The office has a gray carpet and a white wall in the background."
+  },
+  {
+   "t": 23.09,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman is leaning over the desk with her head resting on the keyboard and appears to be deep in thought. There is a blue office chair next to the desk. The floor is covered with a gray carpet and there are other office chairs in the background."
+  },
+  {
+   "t": 24.1,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a white blouse and has long brown hair. On the desk, there is a laptop, a printer, and a telephone. The woman is leaning over the desk and appears to be working on her laptop. There is a blue office chair next to the desk. The floor is covered with a gray carpet and there are other office chairs in the background."
+  }
+ ]
+}

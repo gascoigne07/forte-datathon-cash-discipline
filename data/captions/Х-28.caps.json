@@ -1,0 +1,80 @@
+{
+ "video": "Х-28",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  69,
+  325,
+  373,
+  537
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a bun. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a black printer on the desk next to her. The office has a gray carpeted floor and a white wall in the background."
+  },
+  {
+   "t": 1.01,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a bun. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 2.02,
+   "caption": "The image shows a young woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a ponytail. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 3.02,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a ponytail. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 4.03,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a bun. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 5.04,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has her hair tied up in a bun. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is typing on the keyboard. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 6.05,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink sweater and has long brown hair. On the desk, there is a laptop, a telephone, and a printer. The woman appears to be working on her laptop and is looking at the screen. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 7.06,
+   "caption": "The image shows a woman standing behind a wooden desk in an office. She is wearing a pink blouse and black skirt and is using a laptop on the desk. On the desk, there is a black printer and a black telephone. The desk is in an empty room with a gray carpeted floor and a white filing cabinet on the right side. The woman appears to be working on the laptop and is looking at the screen."
+  },
+  {
+   "t": 8.07,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a person's hand can be seen in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 9.07,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a person's hand can be seen in the top left corner of the image. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 10.08,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. A person is standing in the background, and there are other office furniture visible."
+  },
+  {
+   "t": 11.09,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The desk appears to be in a modern office with a glass wall in the background."
+  },
+  {
+   "t": 12.1,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a glass door on the left side. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 13.11,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 14.11,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a gray carpet on the floor. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 15.12,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and has a cord attached to it. The printer is black with a white label on it. There is also a white filing cabinet on the right side of the desk. The floor is covered with a gray carpet. The background shows a glass door and a white wall."
+  },
+  {
+   "t": 16.13,
+   "caption": "The image shows a wooden desk in an office setting. On the desk, there is a laptop, a telephone, and a printer. The laptop is open and the screen is turned on. The telephone is black and the printer is black. There is a white filing cabinet on the right side of the desk and a glass door on the left side. The floor is covered with a gray carpet."
+  }
+ ]
+}

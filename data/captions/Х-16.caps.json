@@ -1,0 +1,104 @@
+{
+ "video": "Х-16",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  15,
+  331,
+  248,
+  519
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink blouse and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk. The woman appears to be working on her computer and is looking at the screen. The office has a large window in the background."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a white filing cabinet in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 2.01,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a white filing cabinet in the background. The woman appears to be focused on her work."
+  },
+  {
+   "t": 3.01,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a white filing cabinet in the background. The woman appears to be working on her computer."
+  },
+  {
+   "t": 4.01,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a white filing cabinet in the background. The woman appears to be working on her computer."
+  },
+  {
+   "t": 5.01,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a white filing cabinet in the background. The woman appears to be working on her computer."
+  },
+  {
+   "t": 6.02,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing behind the desk. The office has a glass door in the background."
+  },
+  {
+   "t": 7.02,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing behind the desk. The office appears to be modern and well-lit."
+  },
+  {
+   "t": 8.02,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing behind the desk. The office appears to be modern and well-lit."
+  },
+  {
+   "t": 9.03,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. A man in a suit is standing behind the desk, holding a piece of paper in his hand. The woman is holding a credit card in her hand and appears to be paying for something. There is a white printer on the desk next to her. The background shows a gray carpeted floor and a white wall."
+  },
+  {
+   "t": 10.03,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied up in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing behind the desk. The woman is holding a piece of paper in her hand and appears to be looking at it intently. The office has a gray carpet and a white wall in the background."
+  },
+  {
+   "t": 11.03,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied up in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. The woman is holding a small white object in her hand and appears to be looking at it intently. In the background, there is a man standing behind the desk, holding a green bag. The office has a gray carpet and a white filing cabinet."
+  },
+  {
+   "t": 12.04,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied up in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is a printer on the desk and a person standing in the background. The woman is holding a piece of paper in her hand and appears to be in the process of printing or scanning it."
+  },
+  {
+   "t": 13.04,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied up in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing in the background. The woman appears to be deep in thought, with her hand covering her mouth."
+  },
+  {
+   "t": 14.04,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a person standing behind the desk. The woman is holding a piece of paper in her hand and appears to be writing or drawing something on it with a pen. The office has a gray carpet and a white wall in the background."
+  },
+  {
+   "t": 15.04,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is a printer on the desk and a person standing behind the desk, holding a green bag. The woman is holding a white card in her hand and appears to be paying for something. The image is taken from a high angle, looking down on the woman and the desk."
+  },
+  {
+   "t": 16.05,
+   "caption": "The image shows a woman sitting at a desk in an office. She is wearing a pink sweater and has her hair tied back in a ponytail. On the desk, there is a laptop, a telephone, and a printer. A person is standing behind the desk and is holding a green bag. The desk appears to be in an open space with a gray carpet."
+  },
+  {
+   "t": 17.05,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. There is also a printer on the desk and a printer stand next to it. A man in a suit is standing behind the desk, holding a piece of paper and appears to be printing or scanning it. The woman is looking at the printer and seems to be focused on her work."
+  },
+  {
+   "t": 18.05,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is cluttered with a laptop, a telephone, and a printer. The woman is holding a green bag in her hands and appears to be sorting through it. In the background, there is a man in a suit standing behind the desk, holding a pair of scissors and looking at the bag. The office has a gray carpeted floor and a white wall."
+  },
+  {
+   "t": 19.06,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is cluttered with a laptop, a telephone, and a printer. The woman is holding a green bag in her hands and appears to be working on a project. In the background, there is a man in a suit standing near the desk. The office has a gray carpeted floor and a white wall."
+  },
+  {
+   "t": 20.06,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied back in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. The woman is holding a green bag in her hands and appears to be working on a project. There is another person standing behind the desk, possibly a colleague or a colleague. The office has a gray carpeted floor and a white filing cabinet in the background."
+  },
+  {
+   "t": 21.06,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied up in a ponytail. The desk is cluttered with a laptop, a telephone, and a printer. The woman is holding a green bag in her hands and appears to be working on a project. There is another person sitting at the desk in the background. The office has a large window with a view of the outside."
+  },
+  {
+   "t": 22.06,
+   "caption": "The image shows a young woman sitting at a desk in an office. She is wearing a pink sweater and has long brown hair tied up in a ponytail. The desk is made of wood and has a computer monitor, a telephone, and a laptop on it. The woman is holding a green bag in her hands and appears to be working on a project. There is another person sitting in a chair behind her, also working on the computer. The office has a large window in the background."
+  }
+ ]
+}

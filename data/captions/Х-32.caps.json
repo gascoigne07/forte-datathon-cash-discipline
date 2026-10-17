@@ -1,0 +1,100 @@
+{
+ "video": "Х-32",
+ "model": "florence-community/Florence-2-large",
+ "zone": [
+  25,
+  335,
+  325,
+  571
+ ],
+ "captions": [
+  {
+   "t": 0.0,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor and a black keyboard. There is also a black telephone and a white box on the desk. The floor is covered with a gray carpet and there are two white chairs in the background. The room appears to be modern and well-lit."
+  },
+  {
+   "t": 1.0,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black telephone and a black laptop. The telephone is connected to a black cord that is plugged into a white box on the right side of the image. The laptop is resting on the desk next to the telephone. There is a white chair in the background and a glass door on the left side. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 2.01,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor and a black keyboard. There is also a black phone holder and a white box on the desk. The floor is covered with a gray carpet and there are two white chairs in the background. The room appears to be modern and well-lit."
+  },
+  {
+   "t": 3.01,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor and a black keyboard. There is also a black telephone receiver and a white box on the desk. The floor is covered with a gray carpet and there are two white chairs in the background. The room appears to be modern and well-lit."
+  },
+  {
+   "t": 4.01,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black telephone and a black laptop. The telephone is plugged into a power cord and the laptop is resting on the desk. There is a white chair next to the desk and a white cabinet on the right side of the image. The floor is covered with a gray carpet. The background shows a glass door and a window."
+  },
+  {
+   "t": 5.02,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor and a black keyboard. There is also a black phone holder attached to the desk. The floor is covered with a gray carpet and there are two white chairs in the background. A white cabinet is visible on the right side of the image."
+  },
+  {
+   "t": 6.02,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black telephone and a black fax machine. The fax machine is mounted on a white pedestal and is connected to the desk with a cable. There is a laptop and a phone holder on the desk. In the background, there are glass doors and a person standing in front of a window. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 7.02,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black computer monitor and a black keyboard. There is also a black phone holder on the desk. A person's hand is visible in the top right corner of the image, holding a white chair. The floor is covered with a gray carpet and there are glass doors in the background."
+  },
+  {
+   "t": 8.03,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black printer and a black phone holder. The printer is mounted on a white pedestal and appears to be in the process of printing or scanning the image. There is a person standing behind the desk and a white chair in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 9.03,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black printer and a black phone holder. The printer is on the right side of the image and the phone holder is in the center. There is a white cabinet on the left side and a white chair in the background. A person wearing a pink sweater is standing behind the desk and appears to be working on the printer. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 10.03,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has long brown hair. On the desk, there is a black telephone and a black laptop. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman is leaning over the desk and appears to be working on the laptop. There is also a white cabinet on the right side of the desk."
+  },
+  {
+   "t": 11.03,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blazer and has long brown hair. On the desk, there is a black computer monitor, a black telephone, and a black laptop. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman is leaning over the desk with her hands on the desk and appears to be working on the computer."
+  },
+  {
+   "t": 12.04,
+   "caption": "The image shows a woman sitting at a wooden desk in an office. She is wearing a pink blouse and has long brown hair. On the desk, there is a black computer monitor, a black telephone, and a black laptop. The desk is in an open space with a gray carpeted floor and a white wall in the background. The woman is leaning over the desk and appears to be working on the computer."
+  },
+  {
+   "t": 13.04,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black printer and a black phone holder. The printer is on the right side of the image and the phone holder is in the center. There is a white cabinet on the left side and a white chair in the background. The floor is covered with a gray carpet. A person wearing a pink shirt is standing behind the desk and appears to be working on the printer."
+  },
+  {
+   "t": 14.04,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black stapler and a black power cord. A person's hand is visible in the top right corner of the image, holding the staplers. The background shows a white office chair and a gray carpeted floor."
+  },
+  {
+   "t": 15.05,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black stapler and a black power cord. A person's hand is visible in the top right corner of the image, holding the staplers. The background shows a white office chair and a gray carpeted floor."
+  },
+  {
+   "t": 16.05,
+   "caption": "The image shows a person standing behind a wooden desk in an office setting. The desk is in an open space with a gray carpeted floor and a white wall in the background. On the desk, there is a black telephone and a black fax machine. The person is wearing a pink shirt and black pants and is holding the fax machine with both hands. There is also a white chair and a small white cabinet on the right side of the desk. The image appears to be taken from a high angle, looking down on the desk and the person."
+  },
+  {
+   "t": 17.05,
+   "caption": "The image shows a person standing behind a wooden desk in an office setting. The desk is in an open space with a gray carpeted floor and a white wall in the background. On the desk, there is a black printer and a black telephone. The person is wearing a pink shirt and black pants and is using the printer to print or scan a document on the desk. There is also a white chair and a small white cabinet on the right side of the image."
+  },
+  {
+   "t": 18.06,
+   "caption": "The image shows a person standing behind a wooden desk in an office setting. The desk is in an open space with a gray carpeted floor and a white wall in the background. On the desk, there is a black printer and a black telephone. The person is wearing a pink shirt and black pants and is using the printer to print or scan a document on the desk. There is also a white chair and a small white cabinet on the right side of the image."
+  },
+  {
+   "t": 19.06,
+   "caption": "The image shows a wooden desk in an office setting. The desk is rectangular in shape and has a light brown finish. On top of the desk, there is a black printer and a black phone holder. A person wearing a pink shirt is standing behind the desk and appears to be working on the printer. There is a white chair and a white cabinet in the background. The floor is covered with a gray carpet."
+  },
+  {
+   "t": 20.06,
+   "caption": "The image shows a woman in a pink shirt standing behind a wooden desk in an office setting. She is using a computer monitor and a printer to print on a piece of paper. The desk is in an open space with a gray carpeted floor and a white wall in the background. There is a white chair and a small white cabinet on the right side of the desk. The woman is bending over the desk and appears to be working on the printer."
+  },
+  {
+   "t": 21.07,
+   "caption": "The image shows a person standing behind a wooden desk in an office setting. The desk is in an open space with a gray carpeted floor and a white wall in the background. On the desk, there is a black computer monitor, a black keyboard, and a black phone holder. The person is wearing a pink shirt and black pants and is using a handheld scanner to scan the screen of the computer. There is also a white chair and a small white cabinet on the right side of the desk."
+  }
+ ]
+}

@@ -1,0 +1,122 @@
+"""HTTP-слой: API для жюри (раздел 10 ТЗ) + статический UI.
+
+Контракт ТЗ:
+  POST /api/v1/analyze        file=<.mov>, X-API-Key -> {"job_id": ...}
+  GET  /api/v1/jobs/{job_id}  X-API-Key -> {"status": processing|done|failed, ...}
+"""
+from __future__ import annotations
+
+import os
+import shutil
+import threading
+import tempfile
+from pathlib import Path
+
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+
+from .jobs import JobStore
+from .schemas import JobResult
+
+API_KEY = os.environ.get("API_KEY", "")
+MAX_BYTES = int(os.environ.get("MAX_UPLOAD_MB", 200)) * 1024 * 1024
+ALLOWED_EXT = {".mov", ".mp4", ".m4v", ".avi", ".mkv"}  # ТЗ требует .mov, остальное — бонус
+
+STATIC = Path(__file__).resolve().parents[1] / "static"
+
+app = FastAPI(title="ForteBank — контроль кассовой дисциплины по видео",
+              version="1.0.0", docs_url="/api/docs", redoc_url=None)
+store = JobStore(workers=1)
+
+
+def require_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
+    if not API_KEY:
+        raise HTTPException(500, "сервис запущен без API_KEY")
+    if x_api_key != API_KEY:
+        raise HTTPException(401, "неверный или отсутствующий X-API-Key")
+
+
+_MODELS_READY = {"caption": False, "detector": False}
+
+
+@app.on_event("startup")
+def _warmup() -> None:
+    """Прогрев моделей при старте, а не на первом запросе жюри.
+
+    Загрузка весов занимает 20-30 с. Если делать её лениво, это время съест
+    пятиминутный лимит на первое же видео.
+    """
+    def job() -> None:
+        from . import caption, perception
+        try:
+            caption.warmup(); _MODELS_READY["caption"] = True
+        except Exception as exc:                        # noqa: BLE001
+            print(f"warmup caption: {exc}")
+        try:
+            perception._load_detr(); _MODELS_READY["detector"] = True
+        except Exception as exc:                        # noqa: BLE001
+            print(f"warmup detector: {exc}")
+
+    threading.Thread(target=job, daemon=True).start()
+
+
+@app.get("/api/v1/health")
+def health() -> dict:
+    return {"status": "ok", "models": dict(_MODELS_READY)}
+
+
+@app.post("/api/v1/analyze", dependencies=[Depends(require_key)])
+async def analyze(file: UploadFile = File(...)) -> JSONResponse:
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_EXT:
+        raise HTTPException(400, f"ожидается видеофайл {sorted(ALLOWED_EXT)}, получено '{ext}'")
+
+    tmp_dir = Path(tempfile.gettempdir()) / "forte_uploads"
+    tmp_dir.mkdir(exist_ok=True)
+    dst = tmp_dir / f"{os.urandom(6).hex()}{ext}"
+
+    size = 0
+    with dst.open("wb") as fh:
+        while chunk := await file.read(1 << 20):
+            size += len(chunk)
+            if size > MAX_BYTES:
+                fh.close(); dst.unlink(missing_ok=True)
+                raise HTTPException(413, f"файл больше {MAX_BYTES // 1024 // 1024} МБ")
+            fh.write(chunk)
+    if size == 0:
+        dst.unlink(missing_ok=True)
+        raise HTTPException(400, "пустой файл")
+
+    job = store.submit(str(dst), file.filename or dst.name)
+    return JSONResponse({"job_id": job.job_id, "status": job.status})
+
+
+@app.get("/api/v1/jobs/{job_id}", dependencies=[Depends(require_key)],
+         response_model=JobResult, response_model_exclude_none=False)
+def job_status(job_id: str) -> JobResult:
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(404, "задание не найдено")
+    out = JobResult(job_id=job.job_id, status=job.status,
+                    progress=job.progress, stage=job.stage, error=job.error)
+    if job.status == "done" and job.result:
+        r = job.result
+        out.verdict = r["verdict"]
+        out.violations = r["violations"]
+        out.video = r["video"]
+        out.processing_sec = r.get("processing_sec")
+        out.low_coverage = r.get("low_coverage")
+        out.frames_analyzed = r.get("frames_analyzed")
+    return out
+
+
+@app.get("/")
+def index() -> FileResponse:
+    # no-store на саму страницу: ссылки на статику версионированы хэшем,
+    # но сам index.html должен приезжать свежим, иначе браузер держит старые ссылки
+    return FileResponse(STATIC / "index.html",
+                        headers={"Cache-Control": "no-store, must-revalidate"})
+
+
+app.mount("/static", StaticFiles(directory=STATIC), name="static")

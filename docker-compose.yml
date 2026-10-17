@@ -1,0 +1,19 @@
+# Запуск во внутреннем контуре: docker compose up -d
+# Ключ задаётся переменной окружения, веса уже внутри образа.
+services:
+  cash-discipline:
+    build: .
+    image: forte-cash-discipline:1.0.0
+    environment:
+      API_KEY: "${API_KEY:?задайте API_KEY}"
+      ANALYZE_BUDGET_SEC: "260"
+      KF_CAP: "45"
+      HF_HUB_OFFLINE: "1"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # Сервис держит модель в памяти; на одно видео нужно ~4 ГБ
+    deploy:
+      resources:
+        limits:
+          memory: 8G
