@@ -1,0 +1,19 @@
+W1017 21:28:14.675000 79524 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 14449.79it/s]
+Loading weights:   0%|          | 0/917 [00:00<?, ?it/s]Loading weights:  13%|█▎        | 119/917 [00:00<00:00, 1077.71it/s]Loading weights:  25%|██▍       | 227/917 [00:00<00:00, 1046.34it/s]Loading weights:  37%|███▋      | 336/917 [00:00<00:00, 1050.71it/s]Loading weights:  48%|████▊     | 442/917 [00:00<00:01, 440.11it/s] Loading weights:  56%|█████▌    | 515/917 [00:01<00:01, 279.97it/s]Loading weights:  90%|█████████ | 827/917 [00:01<00:00, 645.00it/s]Loading weights: 100%|██████████| 917/917 [00:01<00:00, 487.69it/s]
+Х-21__planted_банка        violation        68с кадров= 19 разметка=[]      Напитки или еда на рабочем м@5
+Х-29__planted_сумка        no_violation     79с кадров= 25 разметка=[]      
+Х-3__planted_стакан        no_violation     78с кадров= 28 разметка=[]      
+Х-43__planted_стакан       no_violation     64с кадров= 22 разметка=[]      
+Х-43__mirror               no_violation     96с кадров= 35 разметка=[]      
+Х-46__mirror               violation        60с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
+Х-43__noise                no_violation     62с кадров= 21 разметка=[]      
+Х-46__noise                violation        60с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
+Х-43__compress             no_violation     74с кадров= 27 разметка=[]      
+Х-46__compress             no_violation     58с кадров= 21 разметка=[11]    
+Х-43__fps15                no_violation     70с кадров= 25 разметка=[]      
+Х-46__fps15                violation        51с кадров= 18 разметка=[11]    Напитки или еда на рабочем м@9
+Х-43__blur_motion          no_violation     62с кадров= 21 разметка=[]      
+Х-46__blur_motion          no_violation     59с кадров= 21 разметка=[11]    
+Х-43__shift                no_violation     63с кадров= 22 разметка=[]      
+Х-46__shift                violation        58с кадров= 21 разметка=[11]    Напитки или еда на рабочем м@9
