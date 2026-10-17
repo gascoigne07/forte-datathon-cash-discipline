@@ -49,9 +49,9 @@ BACKEND = "qwen" if "Qwen" in MODEL_ID else "florence"
 QWEN_PROMPT = (
     "This is an overhead frame of a bank teller's desk. "
     "Describe in English, in 2-3 sentences, exactly what is visible: how many people are in "
-    "the room, whether a worker is at the desk, and every object lying on the desktop "
-    "(name banknotes, cash, cards, papers, cups, cans, bottles, bags explicitly if present). "
-    "Describe only what is actually visible."
+    "the room, whether a worker is at the desk, and what lies on the desktop. "
+    "List only objects that are actually there. Do not mention objects that are absent: "
+    "a sentence like \"there are no cups\" is wrong, simply omit what you do not see."
 )
 
 
@@ -114,9 +114,26 @@ def caption(img: np.ndarray, max_new_tokens: int = 140) -> str:
     return proc.post_process_generation(raw, task=TASK, image_size=pil.size)[TASK].strip()
 
 
+# Отрицание перед ключевым словом. На текущем описателе не встречается ни разу
+# (0 случаев на 906 подписей), но при смене модели или ракурса фраза вида
+# «no cup on the desk» дала бы ложное срабатывание: матчер видит «cup».
+_NEG_RE = re.compile(
+    r"\b(no|not|without|nothing|none|aren't|isn't|does not|do not)\b[^.;]{0,40}$",
+    re.I)
+
+
 def _has(text: str, words) -> bool:
+    """Упоминание ключевого слова без отрицания перед ним."""
     low = text.lower()
-    return any(w in low for w in words)
+    for w in words:
+        i = low.find(w)
+        while i != -1:
+            # смотрим на фрагмент предложения ДО слова: нет ли там отрицания
+            start = max(low.rfind(".", 0, i), low.rfind(";", 0, i)) + 1
+            if not _NEG_RE.search(low[start:i]):
+                return True
+            i = low.find(w, i + 1)
+    return False
 
 
 # Где находится предмет, решает предлог в том же предложении. Это не придирка к
