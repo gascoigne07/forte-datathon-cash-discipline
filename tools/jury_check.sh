@@ -43,33 +43,9 @@ for video in "$@"; do
   done
 
   el=$(( $(date +%s) - t0 ))
-  printf '%s' "$body" | API_EL="$el" python3 -c '
-import json,os,sys
-d=json.load(sys.stdin); el=int(os.environ["API_EL"]); bad=[]
-if d.get("status")!="done": bad.append(f"status={d.get(\"status\")} error={d.get(\"error\")}")
-if d.get("verdict") not in ("violation","no_violation"): bad.append(f"verdict={d.get(\"verdict\")!r}")
-for v in d.get("violations") or []:
-    for k in ("type","timecode_sec","description","evidence_frames"):
-        if k not in v: bad.append(f"в violations нет поля {k}")
-    fr=v.get("evidence_frames") or []
-    if not 1 <= len(fr) <= 3: bad.append(f"кадров-доказательств {len(fr)}, ТЗ разрешает 1-3")
-    for f in fr:
-        if "timestamp_sec" not in f or "image_base64" not in f: bad.append("кадр без timestamp_sec/image_base64")
-        elif len(f["image_base64"]) < 1000: bad.append("кадр подозрительно мал")
-print(f"  вердикт: {d.get(\"verdict\")}  событий: {len(d.get(\"violations\") or [])}  "
-      f"время: {el} с (обработка {d.get(\"processing_sec\")} с, кадров {d.get(\"frames_analyzed\")})")
-if d.get("low_coverage"): print("  ВНИМАНИЕ: low_coverage — разобрано мало кадров, вердикт недостоверен")
-for v in d.get("violations") or []:
-    r=v.get("rule") or {}
-    print(f"    - {v[\"type\"]} @ {v[\"timecode_sec\"]} с, кадров {len(v[\"evidence_frames\"])}, "
-          f"норматив: {r.get(\"clause\")}{\" (трактовка)\" if r.get(\"verified\") is False else \"\"}")
-if bad:
-    print("  НАРУШЕНИЯ КОНТРАКТА:"); [print("    *",b) for b in bad]; sys.exit(1)
-print("  контракт соблюдён")
-' || fail=1
+  printf '%s' "$body" | python3 "$(dirname "$0")/validate_response.py" "$el" || fail=1
 done
 
 echo
-[ "$fail" = "0 " ] 2>/dev/null
 if [ "$fail" -eq 0 ]; then echo "ИТОГ: все проверки пройдены"; else echo "ИТОГ: есть нарушения, см. выше"; fi
 exit "$fail"

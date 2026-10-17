@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import os
 import queue
 import threading
 import time
@@ -25,6 +26,11 @@ class Job:
     result: dict | None = None
     error: str | None = None
     created: float = field(default_factory=time.time)
+
+
+# Лимит ТЗ — 5 минут на видео, и жюри меряет его от отправки, а не от момента,
+# когда воркер взял задание из очереди. Поэтому дедлайн абсолютный.
+DEADLINE_SEC = float(os.environ.get("JOB_DEADLINE_SEC", 285))
 
 
 class JobStore:
@@ -69,7 +75,8 @@ class JobStore:
                     _j.progress = round(min(max(p, 0.0), 1.0), 3)
                     _j.stage = s
 
-                job.result = analyze(job.path, progress, queued=self.pending())
+                job.result = analyze(job.path, progress, queued=self.pending(),
+                                     deadline_ts=job.created + DEADLINE_SEC)
                 job.status = "done"
                 job.progress = 1.0
                 job.stage = "готово"

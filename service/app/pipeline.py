@@ -26,12 +26,21 @@ def _noop(p: float, s: str) -> None:  # pragma: no cover
     pass
 
 
-def analyze(path: str, progress: Progress = _noop, queued: int = 0) -> dict:
-    """queued — сколько заданий ждёт за этим. Чем длиннее очередь, тем меньше
-    кадров разбираем: у жюри 5+ тестовых видео, и лимит 5 минут отсчитывается
-    для каждого, а не для всей пачки."""
+def analyze(path: str, progress: Progress = _noop, queued: int = 0,
+            deadline_ts: float | None = None) -> dict:
+    """queued — сколько заданий ждёт за этим: чем длиннее очередь, тем меньше кадров.
+
+    deadline_ts — абсолютный момент, к которому обязан быть готов результат.
+    Жюри меряет пятиминутный лимит от отправки видео, а не от старта обработки,
+    поэтому время, проведённое в очереди, вычитается из бюджета этого видео.
+    В прогоне пяти роликов подряд последний финишировал на 285-й секунде —
+    без абсолютного дедлайна шестой уже не успел бы.
+    """
     t0 = time.time()
-    left = lambda: BUDGET_SEC - (time.time() - t0)      # noqa: E731
+    if deadline_ts is None:
+        left = lambda: BUDGET_SEC - (time.time() - t0)   # noqa: E731
+    else:
+        left = lambda: deadline_ts - time.time()         # noqa: E731
 
     progress(0.03, "чтение видео")
     duration, fps = perception.probe(path)
