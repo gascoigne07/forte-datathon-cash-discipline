@@ -161,6 +161,107 @@ VARIANTS = [
     ("всё вместе", Cfg(track_area=45, left_mode="track", left_support=2, outsider=True)),
 ]
 
+# --- Перебор на корпусе «как в сервисе» (tools/gpu_corpus.py) ------------------
+# Кадры и факты считаются функциями сервиса (pipeline.select_keyframes,
+# pipeline.frame_facts), базовые события — самим rules.detect_events. Сверху
+# добавляются кандидаты на фактах второго описателя (tools/vlm_corpus.py).
+
+def vlm_extra(name, i, facts, _cache={}):
+    """Факты Qwen3-VL по индексу кадра сетки 2 fps (сетка у корпусов общая)."""
+    if name not in _cache:
+        fp = Path(f"data/vlm/{name}.json")
+        _cache[name] = json.loads(fp.read_text())["frames"] if fp.exists() else []
+    rows = _cache[name]
+    r = rows[i] if i < len(rows) else {}
+    for k in ("teller_at_desk_vlm", "teller_pose_vlm", "person_at_door",
+              "people_in_booth_vlm", "chair_empty"):
+        facts[k] = r.get(k)
+
+
+def not_at_desk(f, mode):
+    pose = f.get("teller_pose_vlm")
+    if mode == "away":
+        return pose == "away"
+    if mode == "away_or_standing":
+        return pose in ("away", "standing")
+    if mode == "chair_empty":
+        return bool(f.get("chair_empty"))
+    raise ValueError(mode)
+
+
+def vlm_candidates(series, c):
+    """Кандидаты по фактам VLM -> [(ключ, таймкод)]."""
+    from app import rules as R
+    out = []
+    def add(key, pred, n, anchor="start"):
+        for lo, hi in R._runs(series, pred):
+            if hi - lo + 1 >= n:
+                k = lo if (anchor == "start" and lo > 0) else (lo + hi) // 2
+                out.append((key, series[k][0]))
+    if c.get("p22"):
+        n, mode, kmin = c["p22"]
+        add("left_workplace", lambda f: not_at_desk(f, mode)
+            and (f.get("people_in_booth_vlm") or 0) >= kmin, n)
+    if c.get("door"):
+        n, mode = c["door"]
+        add("door_while_away", lambda f: bool(f.get("person_at_door"))
+            and not_at_desk(f, mode), n)
+    if c.get("crowd"):
+        add("outsider_vlm", lambda f: (f.get("people_in_booth_vlm") or 0) >= 3, c["crowd"])
+    return out
+
+
+def measure_corpus(cap, cand=None, outsider=(3, 0.0), base=True):
+    from app import rules as R
+    from eval_corpus import evaluate
+    R.OUTSIDER_MIN_SUPPORT, R.OUTSIDER_MIN_SEC = outsider
+    class E:                                   # совместимость с метриками evaluate
+        def __init__(self, key, t): self.key, self.t = key, t
+    def detect(series, tracks=None):
+        ev = R.detect_events(series, tracks=tracks) if base else []
+        if cand:
+            ev = ev + [E(k, t) for k, t in vlm_candidates(series, cand)]
+        return ev
+    return evaluate(cap, extra=vlm_extra, detect=detect)
+
+
+def sweep_corpus(cap, outsider=(3, 0.0)):
+    from eval_corpus import evaluate  # noqa: F401
+    rows = []
+    def run(label, **kw):
+        kw.setdefault("outsider", outsider)
+        r = measure_corpus(cap, **kw)
+        rows.append((label, r))
+        flag = "" if r["fp"] <= 2 else "  ← выше лимита ложных"
+        dt = f"{r['dt_med']:.1f}" if r["dt_med"] is not None else "—"
+        print(f"{label:46s} {r['tp']:4d} {r['fp']:5d} {100 * r['acc']:7.0f}% {dt:>6s}  "
+              f"{','.join(r['false'])}{flag}", flush=True)
+        return r
+    print(f"KF_CAP={cap}\n{'вариант':46s} {'найд':>4s} {'ложн':>5s} {'вердикт':>8s} {'Δt':>6s}  ложные")
+    base = run("базовые правила (сервис как есть)")
+    for n in (3, 4, 5, 6):
+        for sec in (0.0, 3.0, 5.0, 8.0):
+            run(f"посторонние: {n} кадров и ≥{sec:.0f} с", outsider=(n, sec))
+    for kmin in (1, 2):
+        for mode in ("away", "away_or_standing", "chair_empty"):
+            for n in (2, 3, 4, 6):
+                run(f"п.22 VLM: {mode}, людей≥{kmin}, {n} к", cand={"p22": (n, mode, kmin)})
+    for mode in ("away", "away_or_standing"):
+        for n in (1, 2, 3, 4, 6):
+            run(f"дверь VLM при {mode}, {n} к", cand={"door": (n, mode)})
+    for n in (1, 2, 3, 4, 6):
+        run(f"≥3 в кабине по VLM, {n} к", cand={"crowd": n})
+    return base, rows
+
+
+if __name__ == "__main__" and "--corpus" in sys.argv:
+    # --outsider-sec S: кандидаты VLM меряются поверх базы с секундным порогом
+    sec = float(sys.argv[sys.argv.index("--outsider-sec") + 1]) if "--outsider-sec" in sys.argv else 0.0
+    caps = [int(a) for a in sys.argv[sys.argv.index("--corpus") + 1:] if a.isdigit()] or [150]
+    for cap in caps:
+        sweep_corpus(cap, outsider=(3, sec))
+    sys.exit(0)
+
 if __name__ == "__main__":
     print(f"{'вариант':34s} {'найд':>5s} {'ложн':>5s} {'вердикт':>8s} {'Δt мед':>7s} {'≤3с':>5s}  ложные")
     for label, cfg in VARIANTS:

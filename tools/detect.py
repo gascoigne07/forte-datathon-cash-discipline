@@ -13,7 +13,11 @@ import torch
 from transformers import AutoImageProcessor, AutoModelForObjectDetection
 
 MODEL_ID = "PekingU/rtdetr_v2_r50vd"
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "service"))
+from app.perception import pick_device  # noqa: E402
+# Устройство выбирается той же функцией, что и в сервисе: на GPU-сервере прежняя
+# строка "mps или cpu" молча гоняла детектор на процессоре.
+DEVICE = pick_device(torch)[0]
 # классы COCO, которые нам интересны (остальные пишем тоже, фильтруем позже)
 KEEP = None  # None = писать всё выше порога
 

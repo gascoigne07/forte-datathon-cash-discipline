@@ -16,6 +16,10 @@ BUDGET_SEC = float(os.environ.get("ANALYZE_BUDGET_SEC", 260))
 SAMPLE_FPS = 2.0
 KF_STEP_SEC = float(os.environ.get("KF_STEP_SEC", 1.5))
 KF_HARD_CAP = int(os.environ.get("KF_CAP", 45))
+# Кадров за один вызов generate. На L40S батч 16 даёт 0.09 с/кадр против 0.49 с
+# покадрово (замер, шаг G1 в NIGHT-LOG); подписи совпадают в 15 из 16. По
+# умолчанию 1: на MPS батч не проверялся, включается в юните GPU-сервера.
+CAPTION_BATCH = int(os.environ.get("CAPTION_BATCH", 1))
 DESK_CROP_PX = 430_000
 # Порог площади трека подобран перебором на обучающей выборке (40 уникальных
 # роликов): при 45 правило давало 2 ложных срабатывания из 19 чистых, при 60 —
@@ -69,55 +73,44 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
     # остаётся абсолютный дедлайн ниже: не хватит времени — цикл оборвётся сам и
     # выставит low_coverage, а не вылезет за 300 с.
     cap = KF_HARD_CAP if queued <= 0 else max(18, int(KF_HARD_CAP / (1 + queued)))
-    idx = perception.keyframes(frames, budget=cap, step_sec=KF_STEP_SEC)
-    for tr in tracks:                                   # моменты появления предметов — обязательно
-        j = min(range(len(frames)), key=lambda i: abs(frames[i].t - tr.t_start))
-        if j not in idx:
-            idx.append(j)
-    idx = sorted(set(idx))
+    idx = select_keyframes(frames, tracks, cap)
 
     progress(0.25, "описание кадров моделью")
     series: list[tuple[float, dict]] = []
-    durations: list[float] = []
+    per_frame: list[float] = []                         # стоимость кадра по каждому батчу
     reserve = 15.0                                      # на сборку ответа
     MIN_FRAMES = 8                                      # ниже этого вердикт недостоверен
-    for n, i in enumerate(idx):
+    n = 0
+    while n < len(idx):
         # Жёсткий стоп: бюджет кончился — выходим независимо от числа кадров.
         # Иначе при дорогих первых кадрах цикл не прерывался до MIN_FRAMES и
         # обработка вылетала за 300 с, то есть видео засчитывалось необработанным.
         if left() < reserve:
             break
-        # Предсказательный стоп: стоимость кадра берём по медиане уже посчитанных,
-        # а не по первому — в первый кадр попадает загрузка весов, из-за чего
+        chunk = idx[n:n + CAPTION_BATCH]
+        # Предсказательный стоп: стоимость кадра берём по медиане уже посчитанных
+        # батчей, а не по первому — в первый попадает загрузка весов, из-за чего
         # страж обрубал анализ после одного кадра (наблюдалось на Х-40__dark).
-        if durations and len(series) >= MIN_FRAMES:
-            med = sorted(durations)[len(durations) // 2]
-            if left() < reserve + med:
+        # Не влезает весь батч — укорачиваем его, а не бросаем целиком.
+        if per_frame and len(series) >= MIN_FRAMES:
+            med = sorted(per_frame)[len(per_frame) // 2]
+            fit = int((left() - reserve) / med)
+            if fit <= 0:
                 break
-        f = frames[i]
-        crop = objects.crop_object(f.img, zone, target_px=DESK_CROP_PX, pad_rel=0.05)
-        t_frame = time.time()
+            chunk = chunk[:fit]
+        crops = [objects.crop_object(frames[i].img, zone, target_px=DESK_CROP_PX, pad_rel=0.05)
+                 for i in chunk]
+        t_batch = time.time()
         try:
-            text = caption.caption(crop)
+            texts = caption.caption_batch(crops)
         except Exception:                               # noqa: BLE001
+            n += len(chunk)
             continue
-        durations.append(time.time() - t_frame)
-        facts = caption.facts_from_caption(text)
-        ppl = perception.persons_in_room(f, desk_top=zone[1])
-        facts["people_in_cabin"] = max(len(ppl), caption.count_people(text))
-        facts["teller_present"] = _teller_at_desk(ppl, zone)
-        # Кто за столешницей и кто в комнате, но не за ней. По этому признаку
-        # работает правило о пункте 22: «покидать рабочее место до окончания
-        # обслуживания клиента не допускается».
-        facts["at_desk"], facts["off_desk"] = perception.split_by_desk(ppl, zone)
-        # Независимый от модели канал: в этот момент на столешнице есть предмет,
-        # появившийся по ходу записи (вычитание фона). Нужен как второе
-        # подтверждение к «в описании кадра нет ни одного человека».
-        facts["track_on_desk"] = any(
-            t.t_start - 3 <= f.t <= t.t_end + 3 and t.area >= TRACK_MIN_AREA
-            for t in tracks)
-        series.append((f.t, facts))
-        progress(0.25 + 0.6 * (n + 1) / max(1, len(idx)), "описание кадров моделью")
+        per_frame.append((time.time() - t_batch) / len(chunk))
+        for i, text in zip(chunk, texts):
+            series.append((frames[i].t, frame_facts(frames[i], text, zone, tracks)))
+        n += len(chunk)
+        progress(0.25 + 0.6 * n / max(1, len(idx)), "описание кадров моделью")
 
     progress(0.87, "применение правил")
     events = rules.detect_events(series, tracks=tracks)
@@ -148,6 +141,42 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
         "queued_behind": queued,
         "zone_source": zone_source,
     }
+
+
+def select_keyframes(frames, tracks, cap: int) -> list[int]:
+    """Кадры для описателя: сетка + смена числа людей + пики движения, плюс
+    обязательные моменты появления предметов.
+
+    Вынесено в функцию, чтобы оценочный харнесс выбирал кадры тем же кодом, что и
+    сервис: за ночь расхождение харнесса с сервисом трижды давало замеры
+    конфигурации, которой не существует.
+    """
+    idx = perception.keyframes(frames, budget=cap, step_sec=KF_STEP_SEC)
+    for tr in tracks:                                   # моменты появления предметов — обязательно
+        j = min(range(len(frames)), key=lambda i: abs(frames[i].t - tr.t_start))
+        if j not in idx:
+            idx.append(j)
+    return sorted(set(idx))
+
+
+def frame_facts(f, text: str, zone, tracks) -> dict:
+    """Факты одного кадра: разбор подписи + детектор + треки. Одна функция на
+    сервис и харнесс (tools/gpu_corpus.py, tools/eval_corpus.py)."""
+    facts = caption.facts_from_caption(text)
+    ppl = perception.persons_in_room(f, desk_top=zone[1])
+    facts["people_in_cabin"] = max(len(ppl), caption.count_people(text))
+    facts["teller_present"] = _teller_at_desk(ppl, zone)
+    # Кто за столешницей и кто в комнате, но не за ней. По этому признаку
+    # работает правило о пункте 22: «покидать рабочее место до окончания
+    # обслуживания клиента не допускается».
+    facts["at_desk"], facts["off_desk"] = perception.split_by_desk(ppl, zone)
+    # Независимый от модели канал: в этот момент на столешнице есть предмет,
+    # появившийся по ходу записи (вычитание фона). Нужен как второе
+    # подтверждение к «в описании кадра нет ни одного человека».
+    facts["track_on_desk"] = any(
+        t.t_start - 3 <= f.t <= t.t_end + 3 and t.area >= TRACK_MIN_AREA
+        for t in tracks)
+    return facts
 
 
 def _teller_at_desk(persons, zone) -> bool:

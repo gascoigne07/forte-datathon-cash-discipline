@@ -110,10 +110,24 @@ def caption(img: np.ndarray, max_new_tokens: int = 140) -> str:
     """Подробное описание кадра (английский — под него собраны ключевые слова)."""
     if BACKEND == "qwen":
         return _caption_qwen(img, max_new_tokens)
+    return caption_batch([img], max_new_tokens)[0]
+
+
+def caption_batch(imgs: list[np.ndarray], max_new_tokens: int = 140) -> list[str]:
+    """Описание нескольких кадров одним вызовом generate.
+
+    Промпт у всех кадров одинаковый, а процессор приводит любую картинку к 768x768,
+    поэтому паддинга нет и батч даёт те же подписи, что и покадровый вызов, — только
+    GPU загружается целиком, а не на одну восьмую.
+    """
+    if BACKEND == "qwen":
+        return [_caption_qwen(im, max_new_tokens) for im in imgs]
+    if not imgs:
+        return []
     from PIL import Image
     model, proc, dev, torch = _load()
-    pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    inputs = proc(text=TASK, images=pil, return_tensors="pt").to(dev)
+    pils = [Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)) for im in imgs]
+    inputs = proc(text=[TASK] * len(pils), images=pils, return_tensors="pt").to(dev)
     # Процессор всегда отдаёт float32; .to(dev) переносит устройство, но НЕ тип.
     # На CUDA модель в fp16, и несовпадение типов роняет forward.
     if model.dtype != inputs["pixel_values"].dtype:
@@ -122,8 +136,12 @@ def caption(img: np.ndarray, max_new_tokens: int = 140) -> str:
         ids = model.generate(input_ids=inputs["input_ids"],
                              pixel_values=inputs["pixel_values"],
                              max_new_tokens=max_new_tokens, num_beams=1, do_sample=False)
-    raw = proc.batch_decode(ids, skip_special_tokens=False)[0]
-    return proc.post_process_generation(raw, task=TASK, image_size=pil.size)[TASK].strip()
+    # Короткие подписи в батче добиваются <pad> до длины самой длинной; разбор
+    # Florence-2 их не снимает, и токены попали бы в текст и в ключевые слова.
+    pad = proc.tokenizer.pad_token or "<pad>"
+    raws = [r.replace(pad, "") for r in proc.batch_decode(ids, skip_special_tokens=False)]
+    return [proc.post_process_generation(r, task=TASK, image_size=pil.size)[TASK].strip()
+            for r, pil in zip(raws, pils)]
 
 
 # Отрицание перед ключевым словом. На текущем описателе не встречается ни разу

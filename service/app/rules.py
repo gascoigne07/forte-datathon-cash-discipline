@@ -115,6 +115,14 @@ def _mk(series, key, lo, hi, min_support, conf_base) -> Event | None:
                  facts_at_t=series[anchor][1])
 
 
+# Порог серии для правила «посторонние»: в кадрах и в секундах. Порог в кадрах
+# подбирался при 45 ключевых кадрах на ролик; при плотной сетке (KF_CAP=150 на
+# GPU) три кадра подряд — это полторы секунды, и правило начинает срабатывать
+# на мимолётном третьем человеке. Секундный порог от плотности сетки не зависит.
+OUTSIDER_MIN_SUPPORT = 3
+OUTSIDER_MIN_SEC = 0.0
+
+
 def detect_events(series: list[tuple[float, dict]],
                   tracks: list | None = None) -> list[Event]:
     """series: [(секунда, факты), ...] по ключевым кадрам, отсортировано по времени.
@@ -205,8 +213,8 @@ def detect_events(series: list[tuple[float, dict]],
     #    Взято 3 кадра: +2 найденных нарушения (Х-4, Х-38) без новых ложных.
     for lo, hi in _runs(series, lambda f: f.get("people_in_cabin", 0) >= 3
                         and (f.get("track_on_desk") or f.get("paper_seen"))):
-        e = _mk(series, "outsider_with_cash", lo, hi, 3, 0.60)
-        if e:
+        e = _mk(series, "outsider_with_cash", lo, hi, OUTSIDER_MIN_SUPPORT, 0.60)
+        if e and series[hi][0] - series[lo][0] >= OUTSIDER_MIN_SEC:
             ev.append(e)
 
     # Правило по дословному пункту 22 («покидать рабочее место до окончания
