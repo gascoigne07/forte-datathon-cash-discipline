@@ -171,12 +171,24 @@ def detect_events(series: list[tuple[float, dict]],
     #    Пробовали требовать согласия двух каналов (подпись И детектор человека не
     #    видят) — это убирает 1 ложное срабатывание, но теряет 3 настоящих: детектор
     #    слишком часто «видит» человека за стеклом. Замерено, вариант отвергнут.
-    for lo, hi in _runs(series, lambda f: f.get("no_person_in_caption")
-                        and (f.get("paper_seen") or f.get("personal_bag")
-                             or f.get("sealed_bag") or f.get("track_on_desk"))):
+    #    Таймкод: берём САМЫЙ ДЛИННЫЙ подтверждённый интервал и указываем кадр из
+    #    его середины, а не первый сработавший кадр. Момент ухода работника на шаге
+    #    сетки ключевых кадров не наблюдаем, а середина интервала — это кадр, на
+    #    который проверяющему и надо смотреть. Замер на обучающей выборке:
+    #    первый кадр — медиана 2.9 с и 56 % в пределах 3 с; середина самого
+    #    длинного интервала — медиана 2.1 с и 67 % в пределах 3 с.
+    rr = _runs(series, lambda f: f.get("no_person_in_caption")
+               and (f.get("paper_seen") or f.get("personal_bag")
+                    or f.get("sealed_bag") or f.get("track_on_desk")))
+    if rr:
+        lo, hi = max(rr, key=lambda r: r[1] - r[0])
+        mid = (lo + hi) // 2
         e = _mk(series, "unattended_desk", lo, hi, 1, 0.55)
-        if e and not any(x.window[0] <= e.t <= x.window[1] for x in ev):
-            ev.append(e)
+        if e:
+            e.t = round(series[mid][0], 2)
+            e.facts_at_t = series[mid][1]
+            if not any(x.window[0] <= e.t <= x.window[1] for x in ev):
+                ev.append(e)
 
     # 7. Посторонние в кассовом помещении.
     #    Вариант «четверо и более независимо от наличных» замерен и отвергнут:
