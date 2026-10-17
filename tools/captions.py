@@ -58,7 +58,14 @@ def main():
         zone = objects.desk_zone(fr)
         dt = fr[1].t - fr[0].t if len(fr) > 1 else 0.5
         stride = max(1, int(round(a.step / dt)))
-        idx = list(range(0, len(fr), stride))[:a.cap]
+        idx = list(range(0, len(fr), stride))
+        if len(idx) > a.cap:
+            # Равномерно растягиваем бюджет кадров на ВСЁ видео, а не берём первые N.
+            # Иначе на длинных роликах корпус покрывал только начало: нарушения
+            # Х-4 на 57-й и Х-47 на 68-й секунде вообще не попадали в оценку.
+            import numpy as _np
+            sel = _np.linspace(0, len(idx) - 1, a.cap).round().astype(int)
+            idx = [idx[i] for i in sorted(set(sel.tolist()))]
 
         caps = []
         for i in idx:

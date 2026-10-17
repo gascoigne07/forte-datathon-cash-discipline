@@ -1,0 +1,5 @@
+W1017 20:15:53.370000 76858 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/917 [00:00<?, ?it/s]Loading weights:  19%|█▊        | 171/917 [00:00<00:00, 1630.22it/s]Loading weights:  38%|███▊      | 352/917 [00:00<00:00, 1684.81it/s]Loading weights:  57%|█████▋    | 521/917 [00:00<00:00, 1021.35it/s]Loading weights:  95%|█████████▌| 873/917 [00:00<00:00, 1652.75it/s]Loading weights: 100%|██████████| 917/917 [00:00<00:00, 1337.55it/s]
+описатель: florence-community/Florence-2-large (бэкенд florence)
+OpenCV: Couldn't read video stream from file " /Users/miras/Downloads/open/videos/X-1 X-2 Х-10 Х-11 Х-12 Х-13 Х-14 Х-15 Х-16 Х-17 Х-18 Х-19 Х-20 Х-21 Х-22 Х-23 Х-24 Х-25 Х-26 Х-27 Х-28 Х-29 Х-3 Х-30 Х-31 Х-32 Х-33 Х-34 Х-35 Х-37 Х-38 Х-39 Х-4 Х-40 Х-43 Х-44 Х-45 Х-46 Х-47 Х-48 Х-5 Х-8.mov"
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 14505.34it/s]

@@ -30,7 +30,7 @@ def series_for(name):
         row = byt.get(c["t"]) or min(feats["rows"], key=lambda r: abs(r["t"] - c["t"])) if feats["rows"] else None
         f["people_in_cabin"] = row["ppl"] if row else 0
         f["teller_present"] = bool(row and row["ppl"] > 0 and row.get("teller_dist") is not None)
-        f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3 and t["area"] >= 30
+        f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3 and t["area"] >= 60
                                  for t in feats.get("tracks", []))
         series.append((c["t"], f))
     return series, feats.get("tracks", [])

@@ -75,16 +75,24 @@ def rule_ref(key: str) -> dict | None:
     }
 
 
-def _runs(series, pred):
-    """Непрерывные отрезки индексов, где pred(facts) истинно."""
-    out, start = [], None
-    for i, (_, f) in enumerate(series):
-        if pred(f):
-            start = i if start is None else start
-        elif start is not None:
-            out.append((start, i - 1)); start = None
-    if start is not None:
-        out.append((start, len(series) - 1))
+def _runs(series, pred, gap_tolerance: int = 0):
+    """Отрезки индексов, где pred(facts) истинно, с допуском на провалы.
+
+    gap_tolerance=1 разрешает одиночный провал внутри серии: модель ошибается на
+    отдельных кадрах. Включается только для предметных правил (напиток, сумки) —
+    замерено, что для правила «рабочее место без работника» допуск добавляет
+    ложное срабатывание, не добавляя найденных нарушений.
+    """
+    hits = [i for i, (_, f) in enumerate(series) if pred(f)]
+    if not hits:
+        return []
+    out, start, prev = [], hits[0], hits[0]
+    for i in hits[1:]:
+        if i - prev <= gap_tolerance + 1:
+            prev = i
+        else:
+            out.append((start, prev)); start = prev = i
+    out.append((start, prev))
     return out
 
 
@@ -160,6 +168,9 @@ def detect_events(series: list[tuple[float, dict]],
     #    Замерено на обучающей выборке: +5 найденных нарушений ценой 2 ложных
     #    срабатываний из 20 чистых роликов. Точность вердикта при этом растёт
     #    с 62 до 67 %, а ТЗ прямо ставит пропуск выше ложного срабатывания (п.16).
+    #    Пробовали требовать согласия двух каналов (подпись И детектор человека не
+    #    видят) — это убирает 1 ложное срабатывание, но теряет 3 настоящих: детектор
+    #    слишком часто «видит» человека за стеклом. Замерено, вариант отвергнут.
     for lo, hi in _runs(series, lambda f: f.get("no_person_in_caption")
                         and (f.get("paper_seen") or f.get("personal_bag")
                              or f.get("sealed_bag") or f.get("track_on_desk"))):
