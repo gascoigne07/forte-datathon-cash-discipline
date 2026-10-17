@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .jobs import JobStore
-from .schemas import JobResult
+from .schemas import JobResult, Violation, VideoInfo
 
 API_KEY = os.environ.get("API_KEY", "")
 MAX_BYTES = int(os.environ.get("MAX_UPLOAD_MB", 200)) * 1024 * 1024
@@ -106,8 +106,11 @@ def job_status(job_id: str) -> JobResult:
     if job.status == "done" and job.result:
         r = job.result
         out.verdict = r["verdict"]
-        out.violations = r["violations"]
-        out.video = r["video"]
+        # Собираем модели явно, а не кладём словари: иначе pydantic сериализует их
+        # «как есть» с предупреждением, и при любом изменении схемы поле может
+        # молча потеряться по дороге к жюри.
+        out.violations = [Violation.model_validate(v) for v in r["violations"]]
+        out.video = VideoInfo.model_validate(r["video"])
         out.processing_sec = r.get("processing_sec")
         out.low_coverage = r.get("low_coverage")
         out.frames_analyzed = r.get("frames_analyzed")
