@@ -1,0 +1,7 @@
+W1017 22:17:58.254000 80487 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 13417.93it/s]
+Loading weights:   0%|          | 0/917 [00:00<?, ?it/s]Loading weights:  10%|█         | 93/917 [00:00<00:01, 820.76it/s]Loading weights:  19%|█▉        | 176/917 [00:00<00:00, 809.50it/s]Loading weights:  30%|██▉       | 275/917 [00:00<00:00, 859.35it/s]Loading weights:  39%|███▉      | 361/917 [00:00<00:00, 832.22it/s]Loading weights:  49%|████▊     | 445/917 [00:00<00:01, 373.25it/s]Loading weights:  55%|█████▌    | 505/917 [00:01<00:01, 385.37it/s]Loading weights:  61%|██████    | 559/917 [00:01<00:01, 195.55it/s]Loading weights:  85%|████████▍ | 777/917 [00:01<00:00, 420.58it/s]Loading weights:  95%|█████████▍| 869/917 [00:02<00:00, 403.19it/s]Loading weights: 100%|██████████| 917/917 [00:02<00:00, 352.80it/s]
+Х-3__planted_банка_x1.5    violation        83с кадров= 27 разметка=[]      Напитки или еда на рабочем м@15
+Х-3__planted_сумка_x1.5    no_violation     72с кадров= 27 разметка=[]      
+Х-43__planted_банка_x1.5   violation        64с кадров= 22 разметка=[]      Напитки или еда на рабочем м@14
+Х-43__planted_сумка_x1.5   violation        70с кадров= 24 разметка=[]      Личные вещи (сумка) на рабоч@18
