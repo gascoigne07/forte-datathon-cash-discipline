@@ -33,8 +33,15 @@ class Job:
 DEADLINE_SEC = float(os.environ.get("JOB_DEADLINE_SEC", 285))
 
 
+# Воркер один по умолчанию, и это замер, а не осторожность: на Apple M4 обе модели
+# живут на одном MPS-устройстве, два параллельных анализа втрое замедляют друг друга
+# и трижды приводили к убийству процесса по памяти. На машине с полноценным GPU
+# имеет смысл поднять: WORKERS=2..4.
+DEFAULT_WORKERS = int(os.environ.get("WORKERS", 1))
+
+
 class JobStore:
-    def __init__(self, workers: int = 1):
+    def __init__(self, workers: int = DEFAULT_WORKERS):
         self._jobs: dict[str, Job] = {}
         self._q: "queue.Queue[str]" = queue.Queue()
         self._lock = threading.Lock()

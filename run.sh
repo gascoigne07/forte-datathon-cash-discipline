@@ -11,7 +11,15 @@ cd "$(dirname "$0")"
 : "${API_KEY:=}"
 if [[ -z "$API_KEY" ]]; then
   if [[ -f .api_key ]]; then API_KEY="$(cat .api_key)"
-  else API_KEY="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 40)"; echo "$API_KEY" > .api_key; fi
+  else
+    # Генерируем через python, а не `tr </dev/urandom | head -c 40`: в том конвейере
+    # head закрывает поток после 40 байт, tr получает SIGPIPE, и при `set -o pipefail`
+    # падает весь скрипт. Срабатывало только при ОТСУТСТВУЮЩЕМ .api_key, то есть
+    # ровно при первом запуске у жюри: ./run.sh умирал молча с кодом 141.
+    API_KEY="$(.venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(30))')"
+    echo "$API_KEY" > .api_key
+    chmod 600 .api_key
+  fi
 fi
 export API_KEY
 

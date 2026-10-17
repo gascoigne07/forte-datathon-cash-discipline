@@ -28,7 +28,7 @@ STATIC = Path(__file__).resolve().parents[1] / "static"
 
 app = FastAPI(title="ForteBank — контроль кассовой дисциплины по видео",
               version="1.0.0", docs_url="/api/docs", redoc_url=None)
-store = JobStore(workers=1)
+store = JobStore()
 
 
 def require_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
@@ -111,10 +111,15 @@ def job_status(job_id: str) -> JobResult:
         # молча потеряться по дороге к жюри.
         out.violations = [Violation.model_validate(v) for v in r["violations"]]
         out.video = VideoInfo.model_validate(r["video"])
-        out.processing_sec = r.get("processing_sec")
-        out.low_coverage = r.get("low_coverage")
-        out.frames_analyzed = r.get("frames_analyzed")
-        out.frames_total_sampled = r.get("frames_total_sampled")
+        # Остальные служебные поля переносим по списку полей схемы, а не руками.
+        # Руками уже потерялось `zone_source`: добавил его в результат конвейера и
+        # в схему, а строку копирования здесь не дописал — поле молча не доехало
+        # до жюри, поймано на приёмочном прогоне (NIGHT-LOG, шаг 9).
+        built = {"job_id", "status", "progress", "stage", "error",
+                 "verdict", "violations", "video"}
+        for name in JobResult.model_fields:
+            if name not in built and name in r:
+                setattr(out, name, r[name])
     return out
 
 

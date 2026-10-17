@@ -61,7 +61,14 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
     tracks = objects.detect_objects(frames, zone=zone)
 
     progress(0.22, "выбор ключевых кадров")
-    cap = KF_HARD_CAP if queued <= 0 else max(12, int(KF_HARD_CAP / (1 + queued)))
+    # Нижняя граница 18, а не 12: перебор по прореженному корпусу показал, что до
+    # 18 кадров метрика держится (вердикт 72 %), на 15 появляется второе ложное
+    # срабатывание, а на 12-13 теряются Х-4, Х-26 и Х-40 (вердикт 65-68 %). Именно
+    # это и случилось на приёмочном прогоне пяти видео: Х-40 получил 13 кадров и
+    # нарушение не нашлось. Граница безопасна, потому что реальным ограничителем
+    # остаётся абсолютный дедлайн ниже: не хватит времени — цикл оборвётся сам и
+    # выставит low_coverage, а не вылезет за 300 с.
+    cap = KF_HARD_CAP if queued <= 0 else max(18, int(KF_HARD_CAP / (1 + queued)))
     idx = perception.keyframes(frames, budget=cap, step_sec=KF_STEP_SEC)
     for tr in tracks:                                   # моменты появления предметов — обязательно
         j = min(range(len(frames)), key=lambda i: abs(frames[i].t - tr.t_start))
