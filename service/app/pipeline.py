@@ -120,7 +120,7 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
         out.append({
             "type": e.type,
             "timecode_sec": e.t,
-            "description": _describe(e),
+            "description": _describe(e, tracks),
             "evidence_frames": _evidence(frames, e, zone, tracks),
             "confidence": e.confidence,
             "rule": rules.rule_ref(e.key),
@@ -209,7 +209,7 @@ _PHRASES = {
         "работник отсутствует на рабочем месте, при этом в кадре фигурируют ценности",
         "при оставлении рабочего места ценности убираются, а доступ к ним закрывается"),
     "outsider_with_cash": (
-        "в помещении находятся трое и более человек одновременно с наличными на столе",
+        "в помещении находятся трое и более человек, на столешнице есть предметы",
         "доступ посторонних в кассовое помещение во время операций с наличностью "
         "ограничен требованиями к устройству кассового узла"),
     "manual_count": (
@@ -226,13 +226,75 @@ _PHRASES = {
 }
 
 
-def _describe(e: rules.Event) -> str:
+# Факт -> как он называется по-русски в описании. Описание собирается ИЗ ФАКТОВ,
+# а английский текст описателя в ответ не попадает: он служебный, проверяющему нужен
+# разбор на его языке, а не пересказ модели.
+_FACT_RU = {
+    "drink_or_food": "посуда с напитком или еда",
+    "personal_bag": "личная сумка или пакет",
+    "sealed_bag": "инкассаторская сумка",
+    "paper_seen": "документы",
+    "machine_seen": "счётно-денежная машина",
+}
+_ON_DESK = {"personal_bag": "bag_ctx", "sealed_bag": "sealed_ctx"}
+# 400 символов не хватало: на `Х-11` и `Х-13` лимит срезал именно отсутствие
+# работника — главный факт события «рабочее место без контроля» — с перевесом
+# в два символа. 460 вмещает полный перечень на всех 13 событиях выборки.
+DESC_MAX = 460
+
+
+def _observed(f: dict, appeared: float | None) -> list[str]:
+    """Наблюдаемое на кадре события — только из признаков, без текста модели.
+
+    Порядок важен: при превышении лимита длины отрезается хвост списка, поэтому
+    предметы идут первыми, а служебные уточнения — последними.
+    """
+    out: list[str] = []
+    seen = []
+    for k, ru in _FACT_RU.items():
+        if not f.get(k):
+            continue
+        ctx = _ON_DESK.get(k)
+        seen.append(f"{ru} на столешнице" if ctx and f.get(ctx) == "on_desk" else ru)
+    if seen:
+        out.append("в кадре: " + ", ".join(seen))
+
+    # Два независимых канала о присутствии людей могут расходиться: детектор видит
+    # человека через стеклянную стену, а в зоне столешницы его нет. Пишем это прямо,
+    # иначе проверяющий читает описание как противоречивое.
+    n = f.get("people_in_cabin")
+    if f.get("no_person_in_caption"):
+        out.append(f"у столешницы работника нет (детектор видит {n} чел. в кадре)"
+                   if n else "людей в кадре не обнаружено")
+    elif n is not None:
+        out.append("людей в кадре не обнаружено" if n == 0 else f"людей в кадре: {n}")
+        if f.get("teller_present"):
+            out.append("работник у столешницы")
+
+    if appeared is not None:
+        out.append(f"предмет появился на столешнице на {appeared:.1f} с")
+    return out
+
+
+def _describe(e: rules.Event, tracks=None) -> str:
     what, why = _PHRASES.get(
         e.key, ("зафиксирован наблюдаемый признак", "требуется проверка человеком"))
     w0, w1 = e.window
-    span = (f"с {w0:.1f} по {w1:.1f} с" if w1 > w0 else f"на {w0:.1f} с")
-    conf = ("признак подтверждён на нескольких кадрах" if e.support >= 3
-            else "признак подтверждён на двух кадрах")
-    return (f"Что видно: {what} ({span}, {conf}). "
-            f"Почему это может указывать на нарушение: {why}. "
-            f"Вывод носит характер подсказки — окончательную оценку даёт проверяющий.")
+    span = (f"{w0:.1f}–{w1:.1f} с" if w1 > w0 else f"{w0:.1f} с")
+
+    appeared = None
+    near = [t for t in (tracks or [])
+            if t.t_start > 1.0 and abs(t.t_start - e.t) <= 3.0]
+    if near:
+        appeared = min(near, key=lambda t: abs(t.t_start - e.t)).t_start
+
+    obs = _observed(e.facts_at_t or {}, appeared)
+    tail = (f" Почему это может указывать на нарушение: {why}."
+            " Окончательную оценку даёт проверяющий.")
+    head = f"Что видно ({span}, кадров с признаком: {e.support}): {what}"
+    # Перечень фактов отрезается первым: он уточняет, а связь с нормой — обязательна.
+    while obs and len(head) + len(" — " + "; ".join(obs) + ".") + len(tail) > DESC_MAX:
+        obs.pop()
+    if obs:
+        head += " — " + "; ".join(obs)
+    return head + "." + tail
