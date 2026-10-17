@@ -59,13 +59,35 @@ def sample(path: str, fps: float = 2.0, max_side: int = 960) -> list[Frame]:
     return out
 
 
+def pick_device(torch):
+    """Устройство и тип весов: cuda -> mps -> cpu.
+
+    Одна функция на весь сервис: описатель и детектор обязаны выбирать устройство
+    одинаково, иначе тензоры окажутся на разных устройствах. За эту ночь уже
+    трижды ловили расхождения признаков из-за дублирования логики в двух местах.
+
+    На CUDA — половинная точность: Florence-2-large в fp16 занимает вдвое меньше
+    памяти и считается заметно быстрее. На MPS и CPU остаётся float32: в fp16 на
+    MPS генерация у Florence-2 разъезжается, а на CPU половинная точность
+    эмулируется и только замедляет.
+    """
+    if torch.cuda.is_available():
+        return "cuda", torch.float16
+    if torch.backends.mps.is_available():
+        return "mps", torch.float32
+    return "cpu", torch.float32
+
+
 def _load_detr():
     global _DETR
     if _DETR is None:
         import torch
         from transformers import AutoImageProcessor, AutoModelForObjectDetection
         mid = "PekingU/rtdetr_v2_r50vd"
-        dev = "mps" if torch.backends.mps.is_available() else "cpu"
+        # Детектор держим в float32 даже на CUDA: он дешёвый (десятки миллисекунд
+        # на кадр), а в fp16 шаг представимых чисел у координаты 848 равен
+        # половине пикселя — боксы и зона столешницы поехали бы на ровном месте.
+        dev, _ = pick_device(torch)
         proc = AutoImageProcessor.from_pretrained(mid)
         model = AutoModelForObjectDetection.from_pretrained(mid).to(dev).eval()
         _DETR = (proc, model, dev, torch)

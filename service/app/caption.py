@@ -66,10 +66,18 @@ def _load():
         else:
             import torch
             from transformers import Florence2ForConditionalGeneration, Florence2Processor
-            dev = "mps" if torch.backends.mps.is_available() else "cpu"
+
+            from .perception import pick_device
+            dev, dtype = pick_device(torch)
             proc = Florence2Processor.from_pretrained(MODEL_ID)
+            kw = {"dtype": dtype}
+            if dev != "cuda":
+                # На MPS и CPU оставляем eager: реализация внимания по умолчанию
+                # для Florence-2 там спотыкается. На CUDA ограничение снимаем —
+                # штатная реализация быстрее, а памяти в fp16 хватает с запасом.
+                kw["attn_implementation"] = "eager"
             model = Florence2ForConditionalGeneration.from_pretrained(
-                MODEL_ID, dtype=torch.float32, attn_implementation="eager").to(dev).eval()
+                MODEL_ID, **kw).to(dev).eval()
             _MODEL = (model, proc, dev, torch)
     return _MODEL
 
@@ -106,6 +114,10 @@ def caption(img: np.ndarray, max_new_tokens: int = 140) -> str:
     model, proc, dev, torch = _load()
     pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     inputs = proc(text=TASK, images=pil, return_tensors="pt").to(dev)
+    # Процессор всегда отдаёт float32; .to(dev) переносит устройство, но НЕ тип.
+    # На CUDA модель в fp16, и несовпадение типов роняет forward.
+    if model.dtype != inputs["pixel_values"].dtype:
+        inputs["pixel_values"] = inputs["pixel_values"].to(model.dtype)
     with _LOCK, torch.inference_mode():
         ids = model.generate(input_ids=inputs["input_ids"],
                              pixel_values=inputs["pixel_values"],
