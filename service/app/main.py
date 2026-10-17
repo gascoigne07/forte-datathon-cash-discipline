@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import shutil
 import threading
 import tempfile
@@ -33,7 +34,9 @@ store = JobStore(workers=1)
 def require_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
     if not API_KEY:
         raise HTTPException(500, "сервис запущен без API_KEY")
-    if x_api_key != API_KEY:
+    # Сравнение за постоянное время: сервис выставлен в интернет, и обычное !=
+    # прекращает сравнение на первом несовпавшем символе.
+    if not (x_api_key and secrets.compare_digest(x_api_key, API_KEY)):
         raise HTTPException(401, "неверный или отсутствующий X-API-Key")
 
 
