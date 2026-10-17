@@ -10,6 +10,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "service"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from app import caption, rules  # noqa: E402
+from app.objects import ObjectTrack  # noqa: E402
+from app.pipeline import TRACK_MIN_AREA  # noqa: E402
 from evaluate import LABELS  # noqa: E402
 
 # Х-47 побайтово равен Х-4, Х-48 равен Х-5 (md5 совпадает). Оценивать их как
@@ -35,10 +37,16 @@ def series_for(name):
         row = byt.get(c["t"]) or min(feats["rows"], key=lambda r: abs(r["t"] - c["t"])) if feats["rows"] else None
         f["people_in_cabin"] = row["ppl"] if row else 0
         f["teller_present"] = bool(row and row["ppl"] > 0 and row.get("teller_dist") is not None)
-        f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3 and t["area"] >= 60
+        f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3
+                                 and t["area"] >= TRACK_MIN_AREA
                                  for t in feats.get("tracks", []))
         series.append((c["t"], f))
-    return series, feats.get("tracks", [])
+    # Треки приводим к тому же типу, что и в сервисе: detect_events уточняет по ним
+    # таймкод, и без этого замер Δt измерял бы не то, что реально отдаёт сервис.
+    tracks = [ObjectTrack(t_start=t["t0"], t_end=t["t1"], box=tuple(t["box"]),
+                          area=t["area"], frames=0, near_person=t["near_person"])
+              for t in feats.get("tracks", []) if t["area"] >= TRACK_MIN_AREA]
+    return series, tracks
 
 
 def main():
@@ -51,10 +59,10 @@ def main():
         name = Path(p).stem.replace(".caps", "")
         if name not in LABELS or name in DUPLICATES:
             continue
-        series, _ = series_for(name)
+        series, tracks = series_for(name)
         if not series:
             continue
-        ev = rules.detect_events(series)
+        ev = rules.detect_events(series, tracks=tracks)
         gold, pred, truth = LABELS[name], bool(ev), bool(LABELS[name])
         tp += pred and truth; fp += pred and not truth
         fn += (not pred) and truth; tn += (not pred) and not truth

@@ -212,13 +212,22 @@ def detect_events(series: list[tuple[float, dict]],
     return ev
 
 
-def _snap_to_tracks(ev: list[Event], tracks, max_gap: float = 4.0) -> None:
-    """Уточнение таймкода по моменту появления предмета на столешнице."""
+def _snap_to_tracks(ev: list[Event], tracks, max_gap: float = 4.0,
+                    min_t_start: float = 1.0) -> None:
+    """Уточнение таймкода по моменту появления предмета на столешнице.
+
+    Трек, существующий с первого же кадра, обозначает не появление предмета, а фон:
+    столешницу без этого предмета мы никогда не видели. Притягивать к нему таймкод
+    значит сдвигать событие на нулевую секунду. Замер на обучающей выборке
+    (`Х-30`, `Х-32`): с такими треками доля ошибок ≤3 с падала с 55 % до 45 %,
+    средняя ошибка 5.5 с; без них — 55 % и 5.2 с.
+    """
     for e in ev:
         if e.key not in ("food_drink", "personal_bag", "sealed_bag",
                          "cash_unattended", "unattended_desk"):
             continue
-        near = [t for t in tracks if abs(t.t_start - e.t) <= max_gap]
+        near = [t for t in tracks if t.t_start > min_t_start
+                and abs(t.t_start - e.t) <= max_gap]
         if near:
             t_new = round(min(near, key=lambda t: abs(t.t_start - e.t)).t_start, 2)
             # Окно расширяем до нового таймкода: иначе описание сообщало бы
@@ -227,14 +236,28 @@ def _snap_to_tracks(ev: list[Event], tracks, max_gap: float = 4.0) -> None:
             e.t = t_new
 
 
-MAX_EVENTS = 4
+MAX_EVENTS = 6
+MERGE_GAP = 3.0      # окна ближе этого — одно наблюдение, склеиваем
+SPLIT_GAP = 12.0     # разнесены дальше этого — разные эпизоды, оба остаются
 
 
-def _dedup(ev: list[Event], gap: float = 3.0) -> list[Event]:
-    """Склейка соседних событий одного типа и отбор лучшего по каждому типу.
+def _window_gap(a: Event, b: Event) -> float:
+    """Расстояние между окнами двух событий; 0, если окна пересекаются."""
+    return max(0.0, a.window[0] - b.window[1], b.window[0] - a.window[1])
 
-    Жюри оценивает корректность типа события, поэтому лишние срабатывания вредят:
-    на одном ролике лучше два уверенных события разных типов, чем пять однокадровых.
+
+def _dedup(ev: list[Event], gap: float = MERGE_GAP,
+           split: float = SPLIT_GAP) -> list[Event]:
+    """Склейка близких событий одного типа; разнесённые во времени — оставить оба.
+
+    Один ролик может содержать два отдельных эпизода одного типа: в `Х-4` разметка
+    указывает 57 и 68 с. Прежняя версия оставляла по одному событию на тип и такой
+    второй эпизод теряла.
+
+    Три зоны по расстоянию между окнами событий одного типа:
+      ≤ `gap`      — одно и то же наблюдение, склеиваем окна и поддержку;
+      ≤ `split`    — вероятно один затянувшийся эпизод, оставляем лучшее событие;
+      > `split`    — разные эпизоды, оставляем оба.
     """
     merged: list[Event] = []
     for e in ev:
@@ -246,11 +269,11 @@ def _dedup(ev: list[Event], gap: float = 3.0) -> list[Event]:
         else:
             merged.append(e)
 
-    best: dict[str, Event] = {}
-    for e in merged:
-        cur = best.get(e.key)
-        if cur is None or (e.confidence, e.support) > (cur.confidence, cur.support):
-            best[e.key] = e
+    kept: list[Event] = []
+    for e in sorted(merged, key=lambda x: (-x.confidence, -x.support, x.t)):
+        near = [k for k in kept if k.key == e.key and _window_gap(e, k) <= split]
+        if not near:
+            kept.append(e)
 
-    out = sorted(best.values(), key=lambda x: (-x.confidence, x.t))[:MAX_EVENTS]
+    out = sorted(kept, key=lambda x: (-x.confidence, x.t))[:MAX_EVENTS]
     return sorted(out, key=lambda x: x.t)
