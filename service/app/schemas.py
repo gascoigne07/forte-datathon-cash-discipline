@@ -50,3 +50,6 @@ class JobResult(BaseModel):
     low_coverage: bool | None = None
     frames_analyzed: int | None = None
     frames_total_sampled: int | None = None
+    # Как выведена зона столешницы: wood | anchors | roi | fallback. На незнакомом
+    # ракурсе проверяющему важно видеть, получена она из сцены или это константа.
+    zone_source: str | None = None

@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from . import perception
 from .perception import Frame, persons_in_room
 
 
@@ -180,14 +181,50 @@ def background(frames: list[Frame]) -> np.ndarray:
     return np.median(np.stack([f.img for f in frames[::step]]), axis=0).astype(np.uint8)
 
 
+def resolve_desk_zone(frames: list[Frame], bg: np.ndarray | None = None
+                      ) -> tuple[tuple[int, int, int, int], str]:
+    """Зона столешницы и способ, которым она получена.
+
+    Четыре уровня, от самого точного к самому грубому. Способ возвращается наружу
+    и попадает в ответ API: на новом ракурсе проверяющему важно знать, выведена
+    зона из сцены или сервис скатился в константу.
+
+    - `wood`     — тон дерева на медианном фоне (основной путь);
+    - `anchors`  — по статичной технике на столе (другой интерьер);
+    - `roi`      — объединение людей и якорных предметов за всё видео: грубее, но
+                   всё ещё выведено из детекций, а не из пиксельных констант;
+    - `fallback` — нижние две трети кадра. Последний рубеж.
+    """
+    zone = _wood_zone(background(frames) if bg is None else bg)
+    if zone is not None:
+        return zone, "wood"
+    zone = _anchor_zone(frames)
+    if zone is not None:
+        return zone, "anchors"
+
+    h, w = frames[0].img.shape[:2]
+    r = perception.roi(frames)
+    if r != (0, 0, w, h):
+        return r, "roi"
+    return (0, int(0.35 * h), w, h), "fallback"
+
+
 def desk_zone(frames: list[Frame], bg: np.ndarray | None = None
               ) -> tuple[int, int, int, int] | None:
+    """Столешница по тону дерева, иначе по статичной технике, иначе None.
+
+    Оставлено для вызовов, которым не нужен способ получения зоны
+    (`tools/build_normal_bank.py` и прочая оснастка).
+    """
+    return (_wood_zone(background(frames) if bg is None else bg)
+            or _anchor_zone(frames))
+
+
+def _wood_zone(img: np.ndarray) -> tuple[int, int, int, int] | None:
     """Столешница = крупнейшая область тона дерева на медианном фоне.
 
     Считается по фону, а не по кадру: люди и их руки не мешают.
-    Если дерева не нашлось (другой интерьер) — откатываемся на статичную технику.
     """
-    img = background(frames) if bg is None else bg
     h, w = img.shape[:2]
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # Нижний порог яркости — относительный, от медианы кадра. С фиксированным
@@ -206,7 +243,7 @@ def desk_zone(frames: list[Frame], bg: np.ndarray | None = None
             pad = int(0.03 * h)
             return (int(max(0, x - pad)), int(max(0, y - pad)),
                     int(min(w, x + bw + pad)), int(min(h, y + bh + pad)))
-    return _anchor_zone(frames)
+    return None
 
 
 def _anchor_zone(frames: list[Frame], min_share: float = 0.4,

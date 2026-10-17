@@ -38,7 +38,7 @@ VARIANTS = {
     "blur_s12":  "gblur=sigma=1.2",
     "noise_s30": "noise=alls=30:allf=t+u",
     "gray":      "format=gray,format=yuv420p",
-    "res060":    "scale=trunc(iw*0.6/2)*2:trunc(ih*0.6/2)*2,scale=iw/0.6:ih/0.6:flags=bilinear",
+    "res060":    "scale=trunc(iw*0.6/2)*2:trunc(ih*0.6/2)*2,scale=trunc(iw/0.6/2)*2:trunc(ih/0.6/2)*2:flags=bilinear",
     "rot+15":    "rotate=15*PI/180:fillcolor=black@0:bilinear=1",
     # составное: настоящая «другая камера» это сочетание, а не один эффект
     "mirror_rot": "hflip,rotate=8*PI/180:fillcolor=black@0:bilinear=1",

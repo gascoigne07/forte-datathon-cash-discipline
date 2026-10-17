@@ -57,10 +57,7 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
 
     progress(0.18, "разметка сцены")
     bg = objects.background(frames)
-    zone = objects.desk_zone(frames, bg=bg)
-    if zone is None:                                   # запасная зона: нижние две трети
-        h, w = frames[0].img.shape[:2]
-        zone = (0, int(0.35 * h), w, h)
+    zone, zone_source = objects.resolve_desk_zone(frames, bg=bg)
     tracks = objects.detect_objects(frames, zone=zone)
 
     progress(0.22, "выбор ключевых кадров")
@@ -138,6 +135,7 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
         "frames_analyzed": len(series),
         "frames_total_sampled": len(frames),
         "queued_behind": queued,
+        "zone_source": zone_source,
     }
 
 
