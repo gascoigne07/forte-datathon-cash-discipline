@@ -55,13 +55,37 @@ def _from_xlsx(path: Path) -> list[dict]:
     ws = wb["разметка"] if "разметка" in wb.sheetnames else wb[wb.sheetnames[0]]
     # Колонки в файле для человека названы по-русски; приводим к ключам разметки
     # по порядку, а не по заголовку: заголовок напарник может переписать.
-    keys = ["video", "sec", "type", "what", "cue", "conf"]
+    # По ЗАГОЛОВКУ, а не по позиции: колонки уже один раз менялись (добавлены
+    # статус и времена), и позиционное чтение молча сдвинуло бы все поля.
+    ALIAS = {
+        "video": ("ролик", "video"),
+        "sec": ("секунда организаторов", "секунда", "sec"),
+        "type": ("что наблюдается (код)", "тип (выбрать из списка)", "тип", "type", "код"),
+        "what": ("что происходит", "what"),
+        "cue": ("чем это видно", "cue"),
+        "conf": ("уверенность", "conf"),
+        "status": ("статус", "status"),
+        "t_start": ("t_начало", "t_start"),
+        "t_evidence": ("t_доказательство", "t_evidence"),
+        "t_end": ("t_конец", "t_end"),
+        "unclear_reason": ("что мешает решить", "unclear_reason"),
+    }
+    head = [str(c.value or "").strip().lower() for c in ws[1]]
+    idx = {}
+    for key, names in ALIAS.items():
+        for i, h in enumerate(head):
+            if any(h.startswith(nm) for nm in names):
+                idx[key] = i
+                break
+    missing = {"video", "type"} - set(idx)
+    if missing:
+        raise SystemExit(f"в разметке нет колонок {missing}; заголовок: {head}")
     out = []
     for row in ws.iter_rows(min_row=2, values_only=True):
-        if not row or not row[0]:
+        if not row or not row[idx["video"]]:
             continue
-        out.append({k: (str(v).strip() if v is not None else "")
-                    for k, v in zip(keys, row)})
+        out.append({k: (str(row[i]).strip() if i < len(row) and row[i] is not None else "")
+                    for k, i in idx.items()})
     return out
 
 
@@ -116,6 +140,11 @@ def main():
                 print(f"{name:8s} {code:18s} {'—':34s} код не из списка LABELING.md")
                 continue
             if not want:                       # unclear — не предъявляем сервису
+                continue
+            # Статус «это норма» — мнение разметчика, а НЕ отмена метки
+            # организаторов: их положительная метка остаётся основой вердикта
+            # (её мерит eval_caps). Здесь такая строка просто не оценивается.
+            if (row.get("status") or "").startswith("это_норма"):
                 continue
             if got & want:
                 hit += 1
