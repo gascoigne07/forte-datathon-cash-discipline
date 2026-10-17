@@ -17,7 +17,7 @@ const API_BASE = '/api/v1';
 const LS_API_KEY = 'forte_video_api_key'; // ключ в localStorage
 const POLL_INTERVAL_MS = 2000;            // опрос раз в 2 секунды
 const POLL_TIMEOUT_MS = 6 * 60 * 1000;    // общий таймаут опроса — 6 минут
-const MAX_FILE_SIZE_HINT_MB = 2048;       // ориентир для подсказки пользователю (реальный лимит задаёт backend/413)
+const MAX_FILE_SIZE_HINT_MB = 200;       // ориентир для подсказки пользователю (реальный лимит задаёт backend/413)
 
 // ===================================================================
 // Состояние приложения

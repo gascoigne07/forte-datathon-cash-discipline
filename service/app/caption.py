@@ -31,8 +31,12 @@ MACHINE = ("printer", "counting machine", "cash register", "scanner", "fax")
 PAPER = ("paper", "document", "card", "passport", "notebook", "note")
 # Если модель описывает кадр и НИ РАЗУ не упоминает человека — на рабочем месте
 # никого нет. Это отдельный канал, независимый от детектора людей.
-PERSON = ("woman", "man ", "man.", "man,", "person", "people", " she ", " he ",
-          " her ", " his ", "lady", "girl", "worker", "employee", "cashier")
+# По границам слова, а не по подстроке: с проверкой на " she " подпись,
+# начинающаяся со слова She, не находила человека и правило unattended_desk
+# срабатывало на кадре, где работник описан.
+PERSON_RE = re.compile(
+    r"\b(wom[ae]n|m[ae]n|person|people|she|he|her|his|lady|girl|guy|"
+    r"worker|employee|cashier|client|customer|visitor)\b", re.I)
 
 
 def _load():
@@ -104,7 +108,7 @@ def facts_from_caption(text: str) -> dict:
     sealed = _has(text, SEALED)
     bag = _has(text, BAG) and not sealed
     return {
-        "no_person_in_caption": not _has(text, PERSON),
+        "no_person_in_caption": not PERSON_RE.search(text),
         "cash_seen": _has(text, CASH),
         "cash_ctx": object_context(text, CASH) if _has(text, CASH) else "unknown",
         "drink_or_food": _has(text, DRINK),

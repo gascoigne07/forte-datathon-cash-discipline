@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def _load_kb() -> dict[str, dict]:
         for r in json.loads(KB_PATH.read_text(encoding="utf-8")):
             rid = r["id"]
             kb[rid] = r
-            base = rid.rstrip("abc")
+            base = re.sub(r"[a-z]+$", "", rid)
             kb.setdefault(base, r)
     return kb
 
@@ -185,7 +186,11 @@ def _snap_to_tracks(ev: list[Event], tracks, max_gap: float = 4.0) -> None:
             continue
         near = [t for t in tracks if abs(t.t_start - e.t) <= max_gap]
         if near:
-            e.t = round(min(near, key=lambda t: abs(t.t_start - e.t)).t_start, 2)
+            t_new = round(min(near, key=lambda t: abs(t.t_start - e.t)).t_start, 2)
+            # Окно расширяем до нового таймкода: иначе описание сообщало бы
+            # «признак наблюдается с X по Y», а таймкод указывал вне этого диапазона.
+            e.window = (min(e.window[0], t_new), max(e.window[1], t_new))
+            e.t = t_new
 
 
 MAX_EVENTS = 4

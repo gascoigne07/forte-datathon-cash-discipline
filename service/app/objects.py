@@ -88,10 +88,16 @@ def detect_objects(frames: list[Frame], zone: tuple[int, int, int, int] | None =
     tracks: list[dict] = []
     for fi, boxes in enumerate(per_frame):
         for b in boxes:
-            hit = None
+            # Берём трек с наибольшим пересечением, а не первый подходящий:
+            # рядом лежащие предметы иначе склеиваются в один трек и момент
+            # появления привязывается не к тому предмету.
+            hit, best_iou = None, 0.25
             for tr in tracks:
-                if tr["last_fi"] >= fi - 2 and _iou(tr["box"], b[:4]) > 0.25:
-                    hit = tr; break
+                if tr["last_fi"] < fi - 2:
+                    continue
+                iou = _iou(tr["box"], b[:4])
+                if iou > best_iou:
+                    hit, best_iou = tr, iou
             if hit:
                 hit["last_fi"] = fi; hit["n"] += 1
                 hit["areas"].append(b[4])

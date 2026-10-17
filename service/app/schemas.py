@@ -49,3 +49,4 @@ class JobResult(BaseModel):
     # времени). Вердикт в этом случае недостоверен, и это надо видеть проверяющему.
     low_coverage: bool | None = None
     frames_analyzed: int | None = None
+    frames_total_sampled: int | None = None

@@ -111,6 +111,7 @@ def job_status(job_id: str) -> JobResult:
         out.processing_sec = r.get("processing_sec")
         out.low_coverage = r.get("low_coverage")
         out.frames_analyzed = r.get("frames_analyzed")
+        out.frames_total_sampled = r.get("frames_total_sampled")
     return out
 
 
