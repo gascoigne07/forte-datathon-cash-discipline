@@ -10,7 +10,7 @@ import os
 import time
 from typing import Callable
 
-from . import caption, objects, perception, rules
+from . import caption, objects, perception, rules, vlm
 
 BUDGET_SEC = float(os.environ.get("ANALYZE_BUDGET_SEC", 260))
 SAMPLE_FPS = 2.0
@@ -111,6 +111,29 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
             series.append((frames[i].t, frame_facts(frames[i], text, zone, tracks)))
         n += len(chunk)
         progress(0.25 + 0.6 * n / max(1, len(idx)), "описание кадров моделью")
+
+    # Второй описатель — по тем же ключевым кадрам, что успели получить подпись.
+    # Он дополняет факты, а не заменяет: не хватило времени — правила работают на
+    # фактах Florence-2 и детектора, как без него.
+    if vlm.ENABLED and series:
+        progress(0.80, "вопросы второй модели")
+        done = {round(t, 3) for t, _ in series}
+        vidx = [i for i in idx if round(frames[i].t, 3) in done]
+        pos = {round(t, 3): k for k, (t, _) in enumerate(series)}
+        vcost: list[float] = []
+        for s0 in range(0, len(vidx), vlm.BATCH):
+            chunk = vidx[s0:s0 + vlm.BATCH]
+            need = reserve + (max(vcost) * len(chunk) if vcost else 0.0)
+            if left() < need:
+                break
+            t_batch = time.time()
+            try:
+                answers = vlm.ask([frames[i].img for i in chunk])
+            except Exception:                           # noqa: BLE001
+                break
+            vcost.append((time.time() - t_batch) / len(chunk))
+            for i, raw in zip(chunk, answers):
+                series[pos[round(frames[i].t, 3)]][1].update(vlm.parse(raw))
 
     progress(0.87, "применение правил")
     events = rules.detect_events(series, tracks=tracks)
@@ -250,6 +273,10 @@ _PHRASES = {
         "в помещении находятся трое и более человек, на столешнице есть предметы",
         "доступ посторонних в кассовое помещение во время операций с наличностью "
         "ограничен требованиями к устройству кассового узла"),
+    "outsider_vlm": (
+        "по оценке второй модели в помещении находятся трое и более человек",
+        "доступ посторонних в кассовое помещение во время операций с наличностью "
+        "ограничен требованиями к устройству кассового узла"),
     "manual_count": (
         "наличные пересчитываются в руках, счётно-денежная машина не задействована",
         "пересчёт принимаемых и выдаваемых наличных предусмотрен с применением "
@@ -308,6 +335,8 @@ def _observed(f: dict, appeared: float | None) -> list[str]:
         out.append("людей в кадре не обнаружено" if n == 0 else f"людей в кадре: {n}")
         if f.get("teller_present"):
             out.append("работник у столешницы")
+    if f.get("people_in_booth_vlm") is not None:
+        out.append(f"людей в помещении по второй модели: {f['people_in_booth_vlm']}")
 
     if appeared is not None:
         out.append(f"предмет появился на столешнице на {appeared:.1f} с")

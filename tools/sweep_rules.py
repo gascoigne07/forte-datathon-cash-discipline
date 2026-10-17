@@ -166,16 +166,7 @@ VARIANTS = [
 # pipeline.frame_facts), базовые события — самим rules.detect_events. Сверху
 # добавляются кандидаты на фактах второго описателя (tools/vlm_corpus.py).
 
-def vlm_extra(name, i, facts, _cache={}):
-    """Факты Qwen3-VL по индексу кадра сетки 2 fps (сетка у корпусов общая)."""
-    if name not in _cache:
-        fp = Path(f"data/vlm/{name}.json")
-        _cache[name] = json.loads(fp.read_text())["frames"] if fp.exists() else []
-    rows = _cache[name]
-    r = rows[i] if i < len(rows) else {}
-    for k in ("teller_at_desk_vlm", "teller_pose_vlm", "person_at_door",
-              "people_in_booth_vlm", "chair_empty"):
-        facts[k] = r.get(k)
+from eval_corpus import vlm_extra  # noqa: E402  (тот же разбор, что в сервисе)
 
 
 def not_at_desk(f, mode):
@@ -257,7 +248,9 @@ def sweep_corpus(cap, outsider=(3, 0.0)):
 if __name__ == "__main__" and "--corpus" in sys.argv:
     # --outsider-sec S: кандидаты VLM меряются поверх базы с секундным порогом
     sec = float(sys.argv[sys.argv.index("--outsider-sec") + 1]) if "--outsider-sec" in sys.argv else 0.0
-    caps = [int(a) for a in sys.argv[sys.argv.index("--corpus") + 1:] if a.isdigit()] or [150]
+    rest = sys.argv[sys.argv.index("--corpus") + 1:]
+    caps = [int(a) for k, a in enumerate(rest) if a.isdigit()
+            and (k == 0 or rest[k - 1] != "--outsider-sec")] or [150]
     for cap in caps:
         sweep_corpus(cap, outsider=(3, sec))
     sys.exit(0)

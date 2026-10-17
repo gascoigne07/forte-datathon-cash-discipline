@@ -52,6 +52,20 @@ def series_at(name: str, cap: int, extra=None, corpus: str = CORPUS):
     return series, tracks, idx, d
 
 
+def vlm_extra(name, i, facts, _cache={}):
+    """Факты второго описателя (tools/vlm_corpus.py) по индексу кадра сетки 2 fps.
+
+    Ответы хранятся сырыми и разбираются `vlm.parse` — той же функцией, что в сервисе.
+    """
+    from app import vlm
+    if name not in _cache:
+        fp = Path(f"data/vlm/{name}.json")
+        _cache[name] = json.loads(fp.read_text())["frames"] if fp.exists() else []
+    rows = _cache[name]
+    if i < len(rows):
+        facts.update(vlm.parse(rows[i]["raw"]))
+
+
 def names(corpus: str = CORPUS):
     out = []
     for p in sorted(glob.glob(f"{corpus}/*.json")):
@@ -109,10 +123,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cap", type=int, action="append")
     ap.add_argument("--corpus", default=CORPUS)
+    ap.add_argument("--vlm", action="store_true", help="факты второго описателя из data/vlm")
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args()
     for cap in a.cap or [150]:
-        r = evaluate(cap, corpus=a.corpus, verbose=a.v)
+        r = evaluate(cap, extra=vlm_extra if a.vlm else None, corpus=a.corpus, verbose=a.v)
         print(summary(r))
         print(f"  найдены: {', '.join(r['found'])}")
         print(f"  ложные: {', '.join(r['false']) or '—'}")

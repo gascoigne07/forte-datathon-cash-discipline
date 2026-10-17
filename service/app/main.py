@@ -51,9 +51,19 @@ def _warmup() -> None:
     пятиминутный лимит на первое же видео.
     """
     def job() -> None:
-        from . import caption, perception
+        from . import caption, perception, vlm
         try:
-            caption.warmup(); _MODELS_READY["caption"] = True
+            caption.warmup()
+            # Вторая модель прогревается до флага готовности: иначе её загрузка
+            # (около 20 с) легла бы на первое видео жюри. Ключи health прежние —
+            # контракт не меняется; не загрузилась — сервис работает без неё.
+            if vlm.ENABLED:
+                try:
+                    vlm.warmup()
+                except Exception as exc:                # noqa: BLE001
+                    vlm.ENABLED = False
+                    print(f"warmup vlm: {exc}")
+            _MODELS_READY["caption"] = True
         except Exception as exc:                        # noqa: BLE001
             print(f"warmup caption: {exc}")
         try:
