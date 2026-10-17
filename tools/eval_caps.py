@@ -1,4 +1,8 @@
-"""Оценка правил по кэшу подписей + геометрии. Быстрый цикл тюнинга без моделей."""
+"""Оценка правил по кэшу подписей + геометрии. Быстрый цикл тюнинга без моделей.
+
+Каталог подписей задаётся первым аргументом — так два описателя (Florence-2 и
+Qwen3-VL) сравниваются на ОДНИХ И ТЕХ ЖЕ правилах, а не на разных.
+"""
 import json, sys, glob
 from pathlib import Path
 import numpy as np
@@ -9,8 +13,11 @@ from app import caption, rules  # noqa: E402
 from evaluate import LABELS  # noqa: E402
 
 
+CAPS_DIR = "data/captions"
+
+
 def series_for(name):
-    cp = Path(f"data/captions/{name}.caps.json")
+    cp = Path(f"{CAPS_DIR}/{name}.caps.json")
     fp = Path(f"data/feats/{name}.feats.json")
     if not cp.exists():
         return None, None
@@ -23,13 +30,19 @@ def series_for(name):
         row = byt.get(c["t"]) or min(feats["rows"], key=lambda r: abs(r["t"] - c["t"])) if feats["rows"] else None
         f["people_in_cabin"] = row["ppl"] if row else 0
         f["teller_present"] = bool(row and row["ppl"] > 0 and row.get("teller_dist") is not None)
+        f["track_on_desk"] = any(t["t0"] - 3 <= c["t"] <= t["t1"] + 3 and t["area"] >= 30
+                                 for t in feats.get("tracks", []))
         series.append((c["t"], f))
     return series, feats.get("tracks", [])
 
 
 def main():
+    global CAPS_DIR
+    if len(sys.argv) > 1:
+        CAPS_DIR = sys.argv[1].rstrip("/")
+    print(f"подписи из: {CAPS_DIR}")
     tp = fp = fn = tn = 0; errs = []; rows = []
-    for p in sorted(glob.glob("data/captions/*.caps.json")):
+    for p in sorted(glob.glob(f"{CAPS_DIR}/*.caps.json")):
         name = Path(p).stem.replace(".caps", "")
         if name not in LABELS:
             continue

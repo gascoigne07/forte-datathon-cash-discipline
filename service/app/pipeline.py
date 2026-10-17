@@ -17,6 +17,7 @@ SAMPLE_FPS = 2.0
 KF_STEP_SEC = float(os.environ.get("KF_STEP_SEC", 1.5))
 KF_HARD_CAP = int(os.environ.get("KF_CAP", 45))
 DESK_CROP_PX = 430_000
+TRACK_MIN_AREA = 30        # ниже этого блоб неотличим от шума вычитания фона
 
 Progress = Callable[[float, str], None]
 
@@ -88,6 +89,12 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0) -> dict:
         ppl = perception.persons_in_room(f, desk_top=zone[1])
         facts["people_in_cabin"] = max(len(ppl), caption.count_people(text))
         facts["teller_present"] = _teller_at_desk(ppl, zone)
+        # Независимый от модели канал: в этот момент на столешнице есть предмет,
+        # появившийся по ходу записи (вычитание фона). Нужен как второе
+        # подтверждение к «в описании кадра нет ни одного человека».
+        facts["track_on_desk"] = any(
+            t.t_start - 3 <= f.t <= t.t_end + 3 and t.area >= TRACK_MIN_AREA
+            for t in tracks)
         series.append((f.t, facts))
         progress(0.25 + 0.6 * (n + 1) / max(1, len(idx)), "описание кадров моделью")
 

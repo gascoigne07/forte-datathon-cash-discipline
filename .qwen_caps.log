@@ -1,4 +1,10 @@
-W1017 19:29:47.059000 75004 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
-Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 3121.59it/s]
-Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 4127.38it/s]
+W1017 19:32:12.513000 75119 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 3262.60it/s]
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|██████████| 14/14 [00:00<00:00, 3072.91it/s]
 описатель: mlx-community/Qwen3-VL-4B-Instruct-4bit (бэкенд qwen)
+X-1: 16 подписей за 76с (4.8 с/кадр)
+X-2: 12 подписей за 55с (4.5 с/кадр)
+Х-17: 10 подписей за 47с (4.7 с/кадр)
+Х-18: 16 подписей за 74с (4.7 с/кадр)
+/Users/miras/.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
