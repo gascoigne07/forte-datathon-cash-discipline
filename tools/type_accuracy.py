@@ -123,7 +123,52 @@ def load_labels() -> dict[str, list[dict]]:
     return rows
 
 
+TRUTH = Path("annotation/types_truth.csv")
+NO_RULE = {"door_open", "client_left_early", "cash_not_packed"}
+
+
+def type_code(key: str) -> str:
+    """Код типа события для сверки с разметкой: id нормы из kb (без буквенного
+    суффикса), а для типов без нормы-аналога — сам ключ."""
+    import re
+    if key in NO_RULE:
+        return key
+    return re.sub(r"[a-z]+$", "", rules.TYPES[key][1])
+
+
+def by_truth() -> int:
+    """Сверка типов по annotation/types_truth.csv: ролик -> наши типы -> допустимые."""
+    rows = [r for r in csv.DictReader(
+        (ln for ln in TRUTH.open(encoding="utf-8-sig") if not ln.startswith("#")), delimiter=";")]
+    any_hit = all_ok = found = 0
+    print(f"{'ролик':6s} | {'наши типы (код)':58s} | {'допустимые':20s} | совпало")
+    print("-" * 110)
+    for r in rows:
+        name, allowed = r["video"].strip(), set(r["allowed"].split("|"))
+        got = events_for(name)
+        evs = sorted(got or [])
+        codes = [type_code(k) for k in evs]
+        if not evs:
+            verdict = "не найдено"
+        else:
+            found += 1
+            hit = bool(set(codes) & allowed)
+            ok = set(codes) <= allowed
+            any_hit += hit; all_ok += ok
+            verdict = ("да" if ok else "да, есть лишний тип") if hit else "НЕТ"
+        shown = ", ".join(f"{rules.TYPES[k][0][:34]} ({c})" for k, c in zip(evs, codes)) or "—"
+        print(f"{name:6s} | {shown[:58]:58s} | {'|'.join(sorted(allowed)):20s} | {verdict}")
+    n = len(rows)
+    print(f"\nроликов в разметке: {n}; найдено сервисом: {found}")
+    print(f"тип совпал (хотя бы одно событие в допустимых): {any_hit} из {found} найденных "
+          f"({100 * any_hit / max(1, found):.0f} %), из всех {n}: {100 * any_hit / n:.0f} %")
+    print(f"все события ролика в допустимых: {all_ok} из {found}")
+    return 0
+
+
 def main():
+    if "--truth" in sys.argv:
+        return by_truth()
     if source() is None:
         print("Разметки нет — тип события мерить нечем. Ожидается один из файлов:")
         for p in SOURCES:
