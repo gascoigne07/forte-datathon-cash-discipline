@@ -52,7 +52,7 @@ MAP = {
     "manual_count": {"manual_count"},
     "cash_unattended": {"cash_unattended", "unattended_desk"},
     "cash_handover": {"cash_unattended", "manual_count"},
-    "left_workplace": {"left_workplace", "unattended_desk"},
+    "left_workplace": {"left_workplace", "unattended_desk", "left_via_door"},
     "cabin_open": {"outsider_with_cash", "outsider_vlm"},
     "outsider": {"outsider_with_cash", "outsider_vlm"},
     "food_drink": {"food_drink"},
