@@ -272,3 +272,22 @@ def _anchor_zone(frames: list[Frame], min_share: float = 0.4,
     bw, bh = x2 - x1, y2 - y1
     return (int(max(0, x1 - expand * bw)), int(max(0, y1 - expand * bh)),
             int(min(w, x2 + expand * bw)), int(min(h, y2 + expand * bh)))
+
+
+def safe_crop(img: np.ndarray, zone, target_px: int = 300_000) -> np.ndarray:
+    """Область за столешницей, где стоит сейф/шкаф: полоса вокруг верхнего края
+    зоны стола (шкаф стоит вплотную за столом и попадает в верх зоны), по ширине —
+    сама зона с запасом. Выводится из зоны
+    стола, а не из координат: ракурс между записями менялся."""
+    h, w = img.shape[:2]
+    zx1, zy1, zx2, zy2 = zone
+    zh, zw = zy2 - zy1, zx2 - zx1
+    x1, x2 = max(0, int(zx1 - 0.1 * zw)), min(w, int(zx2 + 0.1 * zw))
+    y1, y2 = max(0, int(zy1 - 0.4 * zh)), min(h, int(zy1 + 0.45 * zh))
+    sub = img[y1:y2, x1:x2]
+    if sub.size == 0:
+        return img
+    k = (target_px / (sub.shape[0] * sub.shape[1])) ** 0.5
+    if k > 1.05:
+        sub = cv2.resize(sub, None, fx=k, fy=k, interpolation=cv2.INTER_LANCZOS4)
+    return sub

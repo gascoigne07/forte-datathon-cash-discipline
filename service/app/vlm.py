@@ -42,6 +42,12 @@ PROMPT = (
 DRINK_PROMPT = ("Look at the person at the desk. Is the person holding a cup, mug, can or "
                 "bottle in their hand, or drinking? Answer yes or no.")
 
+# Сейф/шкаф по кропу области за столешницей (П5). Три варианта ответа: шкафа в
+# кропе может не быть вовсе — тогда «закрыт» был бы ложным утверждением.
+SAFE_PROMPT = ("This is a close-up of the area behind a bank teller's desk. Is there a grey "
+               "metal cabinet or safe, and is its door open? Answer with one word: open, "
+               "closed, or none.")
+
 _LOCK = threading.Lock()
 _MODEL: Any = None
 
