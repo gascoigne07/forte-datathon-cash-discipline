@@ -18,3 +18,7 @@ data/
 # но служебные дампы JS-бандла adilet — нет
 kb/bundle.js
 kb/doc.js
+
+# служебные логи прогонов — только в data/runs/
+/*.log
+/.*.log
