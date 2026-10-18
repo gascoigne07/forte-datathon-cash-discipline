@@ -298,7 +298,39 @@ def detect_events(series: list[tuple[float, dict]],
     ev = _dedup(ev)
     if tracks:
         _snap_to_tracks(ev, tracks)
+    if LEAVE_ANCHOR:
+        _anchor_to_leaving(ev, series)
     return ev
+
+
+# Якорь таймкода для событий ухода — начало ухода: первый ключевой кадр после
+# последнего, где работник сидел за столешницей, перед окном события. Замер П3
+# (tools/anchor_probe.py, 8 роликов с уходом): текущий якорь — медиана 4.1 с,
+# ≤3 с у 38 %; начало ухода — 3.5 с и 50 %. Для предметных типов текущий якорь
+# (момент появления предмета) лучше любого другого и не меняется.
+LEAVE_ANCHOR = True
+LEAVE_KEYS = ("unattended_desk", "left_via_door", "left_workplace")
+
+
+def _seated(f: dict) -> bool:
+    """Работник сидит за столешницей: человек в зоне стола, подпись его упоминает,
+    вторая модель (если есть) не считает стул пустым."""
+    return (f.get("at_desk", 0) > 0 and not f.get("no_person_in_caption")
+            and not f.get("chair_empty"))
+
+
+def _anchor_to_leaving(ev: list[Event], series) -> None:
+    for e in ev:
+        if e.key not in LEAVE_KEYS:
+            continue
+        before = [k for k, (t, f) in enumerate(series) if t <= e.window[0] and _seated(f)]
+        if not before or before[-1] + 1 >= len(series):
+            continue
+        k = before[-1] + 1
+        t_new = round(series[k][0], 2)
+        e.window = (min(e.window[0], t_new), max(e.window[1], t_new))
+        e.t = t_new
+        e.facts_at_t = series[k][1]
 
 
 def _is_empty(f: dict) -> bool:
