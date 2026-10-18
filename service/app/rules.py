@@ -322,6 +322,11 @@ def detect_events(series: list[tuple[float, dict]],
 # (момент появления предмета) лучше любого другого и не меняется.
 LEAVE_ANCHOR = True
 LEAVE_KEYS = ("unattended_desk", "left_via_door", "left_workplace")
+# Начало ухода ищется не дальше LEAVE_MAX_BACK с до окна события; дальше — это уже не
+# тот уход (на Х-25 якорь уезжал на 22 с назад, в кадр, где работник ещё стоит рядом).
+# Замер: без предела и 10 с — Х-22 6.5 с; 6–8 с — Х-22 3.1 с, остальное то же; 4 с —
+# теряется Х-28 (0.5 → 5.1 с). Взято 8 с.
+LEAVE_MAX_BACK = 8.0
 
 
 def _seated(f: dict) -> bool:
@@ -340,6 +345,8 @@ def _anchor_to_leaving(ev: list[Event], series) -> None:
             continue
         k = before[-1] + 1
         t_new = round(series[k][0], 2)
+        if e.window[0] - t_new > LEAVE_MAX_BACK:
+            continue
         e.window = (min(e.window[0], t_new), max(e.window[1], t_new))
         e.t = t_new
         e.facts_at_t = series[k][1]
