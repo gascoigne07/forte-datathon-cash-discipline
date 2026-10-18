@@ -37,7 +37,9 @@ DEADLINE_SEC = float(os.environ.get("JOB_DEADLINE_SEC", 285))
 # живут на одном MPS-устройстве, два параллельных анализа втрое замедляют друг друга
 # и трижды приводили к убийству процесса по памяти. На машине с полноценным GPU
 # имеет смысл поднять: WORKERS=2..4.
-DEFAULT_WORKERS = int(os.environ.get("WORKERS", 1))
+from .config import env  # noqa: E402
+
+DEFAULT_WORKERS = int(env("WORKERS", 2, 1))
 
 
 class JobStore:

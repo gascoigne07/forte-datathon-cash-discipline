@@ -6,7 +6,7 @@
 то, что попало в кроп; детектор считает людей и за стеклянной стеной. Прямой вопрос
 о числе людей в комнате модель покрупнее отвечает по всему кадру.
 
-Включается переменной VLM=1 (нужна CUDA: 17 ГБ весов в bf16). Ответ — четыре строки
+На CUDA включён по умолчанию (17 ГБ весов в bf16), на MPS/CPU — выключен; VLM=0/1. Ответ — четыре строки
 фиксированного формата; разбор в факты — функция `parse`, общая для сервиса и
 харнесса (`tools/vlm_corpus.py`).
 """
@@ -20,7 +20,9 @@ from typing import Any
 import cv2
 import numpy as np
 
-ENABLED = os.environ.get("VLM", "0") == "1"
+from .config import env
+
+ENABLED = env("VLM", 1, 0) == "1"
 MODEL_ID = os.environ.get("VLM_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 BATCH = int(os.environ.get("VLM_BATCH", 8))
 

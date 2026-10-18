@@ -11,15 +11,16 @@ import time
 from typing import Callable
 
 from . import caption, objects, perception, rules, vlm
+from .config import env
 
 BUDGET_SEC = float(os.environ.get("ANALYZE_BUDGET_SEC", 260))
 SAMPLE_FPS = 2.0
 KF_STEP_SEC = float(os.environ.get("KF_STEP_SEC", 1.5))
-KF_HARD_CAP = int(os.environ.get("KF_CAP", 45))
+KF_HARD_CAP = int(env("KF_CAP", 90, 45))          # CUDA: 90 (NIGHT-LOG, шаг G1)
 # Кадров за один вызов generate. На L40S батч 16 даёт 0.09 с/кадр против 0.49 с
-# покадрово (замер, шаг G1 в NIGHT-LOG); подписи совпадают в 15 из 16. По
-# умолчанию 1: на MPS батч не проверялся, включается в юните GPU-сервера.
-CAPTION_BATCH = int(os.environ.get("CAPTION_BATCH", 1))
+# покадрово (замер, шаг G1 в NIGHT-LOG); подписи совпадают в 15 из 16. На MPS и
+# CPU по умолчанию 1: там батч не проверялся.
+CAPTION_BATCH = int(env("CAPTION_BATCH", 16, 1))
 DESK_CROP_PX = 430_000
 # Порог площади трека подобран перебором на обучающей выборке (40 уникальных
 # роликов): при 45 правило давало 2 ложных срабатывания из 19 чистых, при 60 —

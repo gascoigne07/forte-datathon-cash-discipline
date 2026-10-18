@@ -15,20 +15,25 @@
 ```bash
 # 1. окружение (один раз)
 uv venv --python 3.12 .venv
-VIRTUAL_ENV=.venv uv pip install torch torchvision transformers timm pillow numpy scipy \
-    scikit-learn opencv-python-headless fastapi "uvicorn[standard]" python-multipart einops
+VIRTUAL_ENV=.venv uv pip install -r requirements.txt   # версии закреплены — на них измерялось качество
 
-# 2. веса моделей (один раз, нужен интернет)
+# 2. веса моделей (один раз, нужен интернет; Qwen3-VL нужен только на GPU)
 .venv/bin/python -c "from huggingface_hub import snapshot_download as d; \
-    d('florence-community/Florence-2-large'); d('PekingU/rtdetr_v2_r50vd')"
+    d('florence-community/Florence-2-large'); d('PekingU/rtdetr_v2_r50vd'); \
+    d('Qwen/Qwen3-VL-8B-Instruct')"
 
 # 3. сервис
-./run.sh              # http://127.0.0.1:8000
-./run.sh --tunnel     # то же + публичный URL через Cloudflare Tunnel
+HF_HUB_OFFLINE=1 ./run.sh     # http://127.0.0.1:8000, полный офлайн
+./run.sh --tunnel             # то же + публичный URL через Cloudflare Tunnel
 ```
 
 API-ключ печатается при старте и сохраняется в `.api_key`. Задать свой: `API_KEY=... ./run.sh`.
-Полный офлайн: `HF_HUB_OFFLINE=1 ./run.sh`.
+Значения по умолчанию зависят от устройства (`service/app/config.py`). **На CUDA** без
+единой переменной включается боевая конфигурация, в которой измерено качество:
+`KF_CAP=90 WORKERS=2 CAPTION_BATCH=16 VLM=1`, правила `DOOR_RULE=1 DOOR_CONFIRM=1
+SEALED_HANDOVER=1 SAFE_RULE=1 DRINK_IN_HAND=0`. На Apple M4 / CPU — `KF_CAP=45 WORKERS=1
+CAPTION_BATCH=1 VLM=0`: второй описатель там не помещается, и правила, которым нужны его
+ответы (дверь, сейф), молчат.
 
 ### Переменные окружения
 

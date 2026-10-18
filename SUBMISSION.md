@@ -8,22 +8,22 @@
 
 | Что | Значение |
 |---|---|
-| Веб-интерфейс | `<публичный URL>` |
-| API | `<публичный URL>/api/v1` |
-| Документация API | `<публичный URL>/api/docs` |
-| Проверка живости | `<публичный URL>/api/v1/health` → `{"status":"ok"}` |
-| API-ключ для жюри | `<ключ>` |
+| Веб-интерфейс | `https://vaccine-testament-baby-white.trycloudflare.com` |
+| API | `https://vaccine-testament-baby-white.trycloudflare.com/api/v1` |
+| Документация API | `https://vaccine-testament-baby-white.trycloudflare.com/api/docs` |
+| Проверка живости | `https://vaccine-testament-baby-white.trycloudflare.com/api/v1/health` → `{"status":"ok"}` |
+| API-ключ для жюри | API-ключ передаётся организаторам через форму сдачи отдельно |
 
 Ключ передаётся в заголовке `X-API-Key`. Запросы без верного ключа отклоняются с кодом 401.
 
 ```bash
 # загрузка видео
-curl -X POST <публичный URL>/api/v1/analyze \
+curl -X POST https://vaccine-testament-baby-white.trycloudflare.com/api/v1/analyze \
      -H "X-API-Key: <ключ>" -F "file=@video_017.mov"
 # -> {"job_id":"3f2a9c1e","status":"processing"}
 
 # получение результата (опрашивать раз в 2-5 секунд)
-curl <публичный URL>/api/v1/jobs/3f2a9c1e -H "X-API-Key: <ключ>"
+curl https://vaccine-testament-baby-white.trycloudflare.com/api/v1/jobs/3f2a9c1e -H "X-API-Key: <ключ>"
 ```
 
 Обработка одного ролика на боевом GPU-сервере занимает 8–31 секунду, при пяти роликах,
@@ -36,13 +36,12 @@ curl <публичный URL>/api/v1/jobs/3f2a9c1e -H "X-API-Key: <ключ>"
 
 ```bash
 uv venv --python 3.12 .venv
-VIRTUAL_ENV=.venv uv pip install torch torchvision transformers timm pillow numpy scipy \
-    scikit-learn opencv-python-headless fastapi "uvicorn[standard]" python-multipart einops
+VIRTUAL_ENV=.venv uv pip install -r requirements.txt   # версии закреплены — на них измерялось качество
 .venv/bin/python -c "from huggingface_hub import snapshot_download as d; \
     d('florence-community/Florence-2-large'); d('PekingU/rtdetr_v2_r50vd'); \
     d('Qwen/Qwen3-VL-8B-Instruct')"   # второй описатель, нужен только при VLM=1 (CUDA)
 HF_HUB_OFFLINE=1 ./run.sh        # после загрузки весов интернет не нужен
-# GPU-сервер: HF_HUB_OFFLINE=1 KF_CAP=90 WORKERS=2 CAPTION_BATCH=16 VLM=1 DOOR_RULE=1 DOOR_CONFIRM=1 ./run.sh
+# на CUDA боевая конфигурация включается по умолчанию (README, раздел 1)
 ```
 
 Использование через интерфейс: ввести API-ключ → перетащить `.mov` → дождаться прогресса →
