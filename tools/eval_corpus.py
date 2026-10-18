@@ -64,6 +64,12 @@ def vlm_extra(name, i, facts, _cache={}):
     rows = _cache[name]
     if i < len(rows):
         facts.update(vlm.parse(rows[i]["raw"]))
+    key = ("drink", name)
+    if key not in _cache:
+        fp = Path(f"data/vlm_drink/{name}.json")
+        _cache[key] = json.loads(fp.read_text()) if fp.exists() else {}
+    if str(i) in _cache[key] and facts.get("drink_or_food"):
+        facts["drink_in_hand_vlm"] = vlm.yes(_cache[key][str(i)])
 
 
 def names(corpus: str = CORPUS):

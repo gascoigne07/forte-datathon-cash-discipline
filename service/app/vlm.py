@@ -35,6 +35,13 @@ PROMPT = (
     "Reply with exactly four lines:\nQ1: ...\nQ2: ...\nQ3: ...\nQ4: ..."
 )
 
+# Отдельный вопрос, задаётся только на кадрах, где Florence-2 назвал напиток или еду:
+# нарушением считается напиток в руке / у лица, а не банка, стоящая на столе.
+# Отдельным вызовом, а не пятым вопросом в PROMPT: смена общего промпта поменяла бы
+# ответы на остальные четыре вопроса, по которым уже откалиброваны правила.
+DRINK_PROMPT = ("Look at the person at the desk. Is the person holding a cup, mug, can or "
+                "bottle in their hand, or drinking? Answer yes or no.")
+
 _LOCK = threading.Lock()
 _MODEL: Any = None
 
@@ -85,11 +92,18 @@ def warmup() -> None:
         _load()
 
 
-def ask(imgs_bgr: list[np.ndarray], max_new_tokens: int = 32) -> list[str]:
-    """Сырые ответы модели на PROMPT по каждому кадру, одним вызовом generate."""
+def yes(text: str) -> bool | None:
+    """Ответ «yes/no» -> bool; неразобранный -> None."""
+    t = text.strip().lower()
+    return True if t.startswith("yes") else False if t.startswith("no") else None
+
+
+def ask(imgs_bgr: list[np.ndarray], max_new_tokens: int = 32,
+        prompt: str = PROMPT) -> list[str]:
+    """Сырые ответы модели на prompt по каждому кадру, одним вызовом generate."""
     from PIL import Image
     model, proc, torch = _load()
-    msgs = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": PROMPT}]}]
+    msgs = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": prompt}]}]
     text = proc.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
     pils = [Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)) for im in imgs_bgr]
     inputs = proc(text=[text] * len(pils), images=pils, return_tensors="pt",

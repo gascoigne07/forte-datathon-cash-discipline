@@ -193,6 +193,13 @@ def object_context(text: str, words) -> str:
     return "unknown"
 
 
+# Напиток именно в руке или у лица: глагол действия рядом с посудой. Нужен, чтобы
+# отличать «пьёт на рабочем месте» от банки, просто стоящей на столе.
+DRINK_IN_HAND_RE = re.compile(
+    r"\b(drinking|sipping|holding (a|an|the|her|his)? ?(cup|mug|can|bottle|glass|coffee|drink|tea)"
+    r"|(cup|mug|glass|bottle|can) (to|near) (her|his|the) (mouth|lips|face))", re.I)
+
+
 def facts_from_caption(text: str) -> dict:
     """Разбор подписи в факты. Никаких выводов, только наличие упоминаний."""
     sealed = _has(text, SEALED)
@@ -202,6 +209,8 @@ def facts_from_caption(text: str) -> dict:
         "cash_seen": _has(text, CASH),
         "cash_ctx": object_context(text, CASH) if _has(text, CASH) else "unknown",
         "drink_or_food": _has(text, DRINK),
+        "drink_ctx": object_context(text, DRINK) if _has(text, DRINK) else "unknown",
+        "drink_in_hand": bool(DRINK_IN_HAND_RE.search(text)),
         "personal_bag": bag,
         "bag_ctx": object_context(text, BAG) if bag else "unknown",
         "sealed_bag": sealed,

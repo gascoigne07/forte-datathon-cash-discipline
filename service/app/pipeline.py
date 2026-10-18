@@ -134,6 +134,20 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
             vcost.append((time.time() - t_batch) / len(chunk))
             for i, raw in zip(chunk, answers):
                 series[pos[round(frames[i].t, 3)]][1].update(vlm.parse(raw))
+        # Отдельный вопрос про напиток в руке — только на кадрах, где Florence-2
+        # назвал напиток или еду (обычно единицы кадров на ролик).
+        didx = [i for i in vidx if series[pos[round(frames[i].t, 3)]][1].get("drink_or_food")]
+        for s0 in range(0, len(didx), vlm.BATCH):
+            chunk = didx[s0:s0 + vlm.BATCH]
+            if left() < reserve + (max(vcost) * len(chunk) if vcost else 0.0):
+                break
+            try:
+                answers = vlm.ask([frames[i].img for i in chunk], max_new_tokens=4,
+                                  prompt=vlm.DRINK_PROMPT)
+            except Exception:                           # noqa: BLE001
+                break
+            for i, raw in zip(chunk, answers):
+                series[pos[round(frames[i].t, 3)]][1]["drink_in_hand_vlm"] = vlm.yes(raw)
 
     progress(0.87, "применение правил")
     events = rules.detect_events(series, tracks=tracks)
