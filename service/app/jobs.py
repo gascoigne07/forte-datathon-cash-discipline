@@ -69,6 +69,7 @@ class JobStore:
         return self._q.qsize()
 
     def _loop(self) -> None:
+        from .guard import no_network
         from .pipeline import analyze
         while True:
             jid = self._q.get()
@@ -82,8 +83,9 @@ class JobStore:
                     _j.progress = round(min(max(p, 0.0), 1.0), 3)
                     _j.stage = s
 
-                job.result = analyze(job.path, progress, queued=self.pending(),
-                                     deadline_ts=job.created + DEADLINE_SEC)
+                with no_network():
+                    job.result = analyze(job.path, progress, queued=self.pending(),
+                                         deadline_ts=job.created + DEADLINE_SEC)
                 job.status = "done"
                 job.progress = 1.0
                 job.stage = "готово"

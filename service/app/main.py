@@ -17,6 +17,7 @@ from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .guard import repair
 from .jobs import JobStore
 from .schemas import JobResult, Violation, VideoInfo
 
@@ -115,6 +116,11 @@ def job_status(job_id: str) -> JobResult:
                     progress=job.progress, stage=job.stage, error=job.error)
     if job.status == "done" and job.result:
         r = job.result
+        # Инварианты контракта перед отдачей: вердикт <-> события, 1-3 кадра, JPEG,
+        # таймкоды внутри длительности. Идемпотентно, исправления — в журнал.
+        fixes = repair(r)
+        if fixes:
+            print(f"job {job.job_id}: исправлено перед отдачей: {fixes}")
         out.verdict = r["verdict"]
         # Собираем модели явно, а не кладём словари: иначе pydantic сериализует их
         # «как есть» с предупреждением, и при любом изменении схемы поле может
