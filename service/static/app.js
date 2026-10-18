@@ -1,730 +1,592 @@
 'use strict';
 
-/**
- * Фронтенд сервиса анализа видео кассовой зоны (ForteBank Datathon).
- * Без сборки и фреймворков — чистый vanilla JS, работает открытием index.html.
+/*
+ * Интерфейс проверяющего. Чистый JS без сборки.
  *
- * Контракт backend-API (не менять):
- *   POST /api/v1/analyze  — multipart/form-data, поле file (.mov), заголовок X-API-Key
- *   GET  /api/v1/jobs/{id} — опрос статуса, тот же заголовок
+ * Контракт API (не менять):
+ *   POST /api/v1/analyze   multipart/form-data, поле file; заголовок X-API-Key  -> {job_id, status}
+ *   GET  /api/v1/jobs/{id} заголовок X-API-Key                                  -> статус + результат
  */
 
-// ===================================================================
-// Константы
-// ===================================================================
+const API = '/api/v1';
+const MAX_MB = 200;                       // лимит сервера (MAX_UPLOAD_MB); проверяем до отправки
+const RETRY_DELAYS_MS = [2000, 5000, 10000];
+const POLL_MS = 2000;
+const GIVE_UP_MS = 10 * 60 * 1000;        // сервер обязан ответить за 5 минут; 10 — с запасом
+const HISTORY_MAX = 5;
 
-const API_BASE = '/api/v1';
-const LS_API_KEY = 'forte_video_api_key'; // ключ в localStorage
-const POLL_INTERVAL_MS = 2000;            // опрос раз в 2 секунды
-const POLL_TIMEOUT_MS = 6 * 60 * 1000;    // общий таймаут опроса — 6 минут
-const MAX_FILE_SIZE_HINT_MB = 200;       // ориентир для подсказки пользователю (реальный лимит задаёт backend/413)
+const LS = { key: 'kk_api_key', active: 'kk_active_job', history: 'kk_history' };
 
-// ===================================================================
-// Состояние приложения
-// ===================================================================
+const $ = (id) => document.getElementById(id);
+const dom = {
+  status: $('status'),
+  apiKey: $('apiKey'), apiKeyToggle: $('apiKeyToggle'),
+  uploadCard: $('uploadCard'), drop: $('drop'), fileInput: $('fileInput'), chooseBtn: $('chooseBtn'),
+  dropEmpty: $('dropEmpty'), dropFile: $('dropFile'), fileName: $('fileName'), fileSize: $('fileSize'),
+  fileRemove: $('fileRemove'), uploadNote: $('uploadNote'), analyzeBtn: $('analyzeBtn'),
+  progressCard: $('progressCard'), progressBar: $('progressBar'), progressFill: $('progressFill'),
+  progressStage: $('progressStage'), progressPct: $('progressPct'), progressElapsed: $('progressElapsed'),
+  progressJob: $('progressJob'),
+  errorCard: $('errorCard'), errorTitle: $('errorTitle'), errorText: $('errorText'), errorNewBtn: $('errorNewBtn'),
+  result: $('result'), verdict: $('verdict'), verdictTitle: $('verdictTitle'), verdictText: $('verdictText'),
+  downloadBtn: $('downloadBtn'), newBtn: $('newBtn'),
+  eventsSection: $('eventsSection'), events: $('events'),
+  historyCard: $('historyCard'), history: $('history'),
+  box: $('box'), boxImg: $('boxImg'), boxCaption: $('boxCaption'),
+  boxClose: $('boxClose'), boxPrev: $('boxPrev'), boxNext: $('boxNext'),
+};
 
 const state = {
-  selectedFile: null,     // File — выбранный пользователем .mov
-  isProcessing: false,    // идёт отправка или опрос — блокирует повторную отправку
-  jobId: null,
-  pollTimer: null,        // id setInterval опроса
-  pollStartedAt: null,    // Date.now() момента начала опроса — для таймера и таймаута
-  elapsedTimer: null,     // id setInterval, обновляющего "прошедшее время"
-  lastResult: null,       // последний успешный job-ответ (status=done) — для экспорта JSON
+  file: null,
+  busy: false,
+  job: null,              // {job_id, filename, started_at}
+  pollTimer: null,
+  elapsedTimer: null,
+  retry: 0,
+  resultText: null,       // сырой текст ответа — «Скачать JSON» отдаёт его байт в байт
+  result: null,
+  gallery: { frames: [], index: 0, opener: null },
 };
 
-// ===================================================================
-// Ссылки на DOM-элементы
-// ===================================================================
+// ---------------------------------------------------------------- утилиты
 
-const dom = {
-  apiKeyInput: document.getElementById('apiKeyInput'),
-  apiKeyToggle: document.getElementById('apiKeyToggle'),
-  apiKeyEyeIcon: document.getElementById('apiKeyEyeIcon'),
+function fmtSize(bytes) {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} КБ`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+}
+function fmtMmSs(sec) {
+  const s = Math.max(0, Math.floor(sec));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+function fmtTimecode(sec) {
+  const s = Math.max(0, Number(sec) || 0);
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}:${(s - m * 60).toFixed(1).padStart(4, '0')}`;
+}
+function fmtWhen(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
+  catch (e) { return fallback; }
+}
+function lsSet(key, value) {
+  try { if (value == null) localStorage.removeItem(key); else localStorage.setItem(key, JSON.stringify(value)); }
+  catch (e) { /* localStorage может быть недоступен — интерфейс работает без него */ }
+}
+function setStatus(text) { dom.status.textContent = text || ''; }
 
-  dropzone: document.getElementById('dropzone'),
-  fileInput: document.getElementById('fileInput'),
-  dropzoneEmpty: document.getElementById('dropzoneEmpty'),
-  dropzoneFile: document.getElementById('dropzoneFile'),
-  fileName: document.getElementById('fileName'),
-  fileSize: document.getElementById('fileSize'),
-  fileRemoveBtn: document.getElementById('fileRemoveBtn'),
+// ---------------------------------------------------------------- ключ
 
-  analyzeBtn: document.getElementById('analyzeBtn'),
-  uploadNote: document.getElementById('uploadNote'),
+function apiKey() { return dom.apiKey.value.trim(); }
 
-  progressSection: document.getElementById('progressSection'),
-  progressFill: document.getElementById('progressFill'),
-  progressStage: document.getElementById('progressStage'),
-  progressPercent: document.getElementById('progressPercent'),
-  progressElapsed: document.getElementById('progressElapsed'),
-  progressJobId: document.getElementById('progressJobId'),
-
-  errorSection: document.getElementById('errorSection'),
-  errorTitle: document.getElementById('errorTitle'),
-  errorText: document.getElementById('errorText'),
-
-  resultSection: document.getElementById('resultSection'),
-  verdictBlock: document.getElementById('verdictBlock'),
-  timelineCard: document.getElementById('timelineCard'),
-  timelineTrack: document.getElementById('timelineTrack'),
-  timelineDuration: document.getElementById('timelineDuration'),
-  violationsList: document.getElementById('violationsList'),
-
-  downloadJsonBtn: document.getElementById('downloadJsonBtn'),
-  copyJsonBtn: document.getElementById('copyJsonBtn'),
-  newAnalysisBtn: document.getElementById('newAnalysisBtn'),
-
-  lightbox: document.getElementById('lightbox'),
-  lightboxImg: document.getElementById('lightboxImg'),
-  lightboxClose: document.getElementById('lightboxClose'),
-};
-
-// ===================================================================
-// Утилиты форматирования
-// ===================================================================
-
-/** Байты → человекочитаемый размер ("12.4 МБ"). */
-function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} Б`;
-  const units = ['КБ', 'МБ', 'ГБ'];
-  let value = bytes / 1024;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-  return `${value.toFixed(1)} ${units[unitIndex]}`;
+function initKey() {
+  dom.apiKey.value = lsGet(LS.key, '');
+  dom.apiKey.addEventListener('input', () => lsSet(LS.key, apiKey()));
+  dom.apiKeyToggle.addEventListener('click', () => {
+    const show = dom.apiKey.type === 'password';
+    dom.apiKey.type = show ? 'text' : 'password';
+    dom.apiKeyToggle.setAttribute('aria-pressed', String(show));
+    dom.apiKeyToggle.setAttribute('aria-label', show ? 'Скрыть ключ' : 'Показать ключ');
+  });
 }
 
-/** Секунды → "мм:сс" (для общих таймеров без долей секунды). */
-function formatMinutesSeconds(totalSeconds) {
-  const safe = Math.max(0, Math.floor(totalSeconds));
-  const minutes = Math.floor(safe / 60);
-  const seconds = safe % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+// ---------------------------------------------------------------- файл
+
+function isVideo(file) {
+  const n = file.name.toLowerCase();
+  return n.endsWith('.mov') || n.endsWith('.mp4');
 }
 
-/** Секунды с долями → "мм:сс.д" — формат таймкода нарушения, как требует ТЗ. */
-function formatTimecode(totalSeconds) {
-  const safe = Math.max(0, totalSeconds);
-  const minutes = Math.floor(safe / 60);
-  const seconds = safe - minutes * 60;
-  // одна цифра после запятой, секунды с ведущим нулём ("03.1")
-  const secondsStr = seconds.toFixed(1).padStart(4, '0');
-  return `${String(minutes).padStart(2, '0')}:${secondsStr}`;
-}
+function note(text) { dom.uploadNote.textContent = text || ''; }
 
-/** Доля 0..1 → проценты для отображения ("42%"). */
-function formatPercent(fraction) {
-  return `${Math.round((fraction || 0) * 100)}%`;
-}
-
-/** Экранирование текста при вставке в innerHTML (описания/типы — произвольный текст от backend). */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text == null ? '' : String(text);
-  return div.innerHTML;
-}
-
-// ===================================================================
-// API-ключ: хранение в localStorage + маскирование поля
-// ===================================================================
-
-function loadApiKey() {
-  const saved = localStorage.getItem(LS_API_KEY) || '';
-  dom.apiKeyInput.value = saved;
-}
-
-function saveApiKey() {
-  localStorage.setItem(LS_API_KEY, dom.apiKeyInput.value.trim());
-}
-
-function getApiKey() {
-  return dom.apiKeyInput.value.trim();
-}
-
-/** Переключение видимости символов ключа (type=password ↔ type=text). */
-function toggleApiKeyVisibility() {
-  const isHidden = dom.apiKeyInput.type === 'password';
-  dom.apiKeyInput.type = isHidden ? 'text' : 'password';
-}
-
-function initApiKeyField() {
-  loadApiKey();
-  dom.apiKeyInput.addEventListener('input', saveApiKey);
-  dom.apiKeyToggle.addEventListener('click', toggleApiKeyVisibility);
-}
-
-// ===================================================================
-// Выбор файла: drag&drop + клик + валидация расширения
-// ===================================================================
-
-function isMovFile(file) {
-  return file && file.name.toLowerCase().endsWith('.mov');
-}
-
-/** Применить выбранный файл: показать имя/размер, включить кнопку отправки. */
-function setSelectedFile(file) {
+function setFile(file) {
   if (!file) return;
-
-  if (!isMovFile(file)) {
-    showUploadNote('Поддерживается только формат .mov', true);
+  if (!isVideo(file)) { note('Нужен видеофайл .mov или .mp4.'); return; }
+  if (file.size > MAX_MB * 1024 * 1024) {
+    note(`Файл ${fmtSize(file.size)} больше ${MAX_MB} МБ — сервер его отклонит (код 413). Файл не отправлен.`);
     return;
   }
-
-  state.selectedFile = file;
+  state.file = file;
   dom.fileName.textContent = file.name;
-  dom.fileSize.textContent = formatFileSize(file.size);
-
-  dom.dropzoneEmpty.hidden = true;
-  dom.dropzoneFile.hidden = false;
-
-  showUploadNote('');
-  updateAnalyzeButtonState();
+  dom.fileSize.textContent = fmtSize(file.size);
+  dom.dropEmpty.hidden = true;
+  dom.dropFile.hidden = false;
+  note('');
+  dom.analyzeBtn.disabled = state.busy;
+  dom.analyzeBtn.focus();
 }
 
-function clearSelectedFile() {
-  state.selectedFile = null;
+function clearFile() {
+  state.file = null;
   dom.fileInput.value = '';
-  dom.dropzoneEmpty.hidden = false;
-  dom.dropzoneFile.hidden = true;
-  updateAnalyzeButtonState();
+  dom.dropEmpty.hidden = false;
+  dom.dropFile.hidden = true;
+  dom.analyzeBtn.disabled = true;
 }
 
-function showUploadNote(text, isWarning) {
-  dom.uploadNote.textContent = text || '';
-  dom.uploadNote.style.color = isWarning ? 'var(--color-danger)' : '';
+function initFile() {
+  dom.chooseBtn.addEventListener('click', () => dom.fileInput.click());
+  dom.drop.addEventListener('click', (e) => {
+    if (state.busy || e.target.closest('button')) return;
+    if (!state.file) dom.fileInput.click();
+  });
+  dom.fileInput.addEventListener('change', () => setFile(dom.fileInput.files && dom.fileInput.files[0]));
+  ['dragenter', 'dragover'].forEach((ev) => dom.drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    if (!state.busy) dom.drop.classList.add('drop--drag');
+  }));
+  ['dragleave', 'drop'].forEach((ev) => dom.drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dom.drop.classList.remove('drop--drag');
+  }));
+  dom.drop.addEventListener('drop', (e) => {
+    if (state.busy) return;
+    setFile(e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+  dom.fileRemove.addEventListener('click', () => { clearFile(); dom.chooseBtn.focus(); });
 }
 
-/** Кнопка "Отправить" активна только если файл выбран и сейчас ничего не обрабатывается. */
-function updateAnalyzeButtonState() {
-  dom.analyzeBtn.disabled = !state.selectedFile || state.isProcessing;
+// ---------------------------------------------------------------- ошибки
+
+class ApiError extends Error {
+  constructor(title, text, fatal = true) { super(title); this.title = title; this.text = text; this.fatal = fatal; }
 }
 
-/** Блокировка/разблокировка зоны загрузки на время обработки — запрет повторной отправки. */
-function setDropzoneDisabled(disabled) {
-  dom.dropzone.classList.toggle('dropzone--disabled', disabled);
-  dom.dropzone.setAttribute('aria-disabled', String(disabled));
-  dom.fileRemoveBtn.disabled = disabled;
+function describeHttp(status, bodyText) {
+  let detail = '';
+  try { detail = JSON.parse(bodyText).detail || ''; } catch (e) { detail = ''; }
+  if (status === 401) return new ApiError('Неверный API-ключ', 'Сервер ответил 401. Проверьте ключ в поле вверху страницы и повторите.');
+  if (status === 400) return new ApiError('Файл отклонён', `Сервер ответил 400: ${detail || 'ожидается видеофайл .mov'}.`);
+  if (status === 413) return new ApiError('Файл слишком большой', `Сервер ответил 413: ${detail || `файл больше ${MAX_MB} МБ`}.`);
+  if (status === 404) return new ApiError('Задание не найдено', 'Сервер ответил 404: задание с таким номером не найдено — возможно, сервис был перезапущен.');
+  return new ApiError('Ошибка сервера', `Код ответа ${status}${detail ? `: ${detail}` : ''}.`, status < 500);
 }
 
-function initFileSelection() {
-  // Клик по зоне открывает системный диалог выбора файла.
-  dom.dropzone.addEventListener('click', () => {
-    if (!state.isProcessing) dom.fileInput.click();
-  });
-  dom.dropzone.addEventListener('keydown', (event) => {
-    if ((event.key === 'Enter' || event.key === ' ') && !state.isProcessing) {
-      event.preventDefault();
-      dom.fileInput.click();
-    }
-  });
-
-  dom.fileInput.addEventListener('change', () => {
-    const file = dom.fileInput.files && dom.fileInput.files[0];
-    if (file) setSelectedFile(file);
-  });
-
-  // Drag & drop.
-  ['dragenter', 'dragover'].forEach((eventName) => {
-    dom.dropzone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      if (!state.isProcessing) dom.dropzone.classList.add('dropzone--drag');
-    });
-  });
-  ['dragleave', 'drop'].forEach((eventName) => {
-    dom.dropzone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dom.dropzone.classList.remove('dropzone--drag');
-    });
-  });
-  dom.dropzone.addEventListener('drop', (event) => {
-    if (state.isProcessing) return;
-    const file = event.dataTransfer.files && event.dataTransfer.files[0];
-    if (file) setSelectedFile(file);
-  });
-
-  // Удаление выбранного файла (не всплываем до клика по dropzone).
-  dom.fileRemoveBtn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    clearSelectedFile();
-  });
+function showError(title, text) {
+  hideProgress();
+  dom.errorTitle.textContent = title;
+  dom.errorText.textContent = text || '';
+  dom.errorCard.hidden = false;
+  setStatus(`${title}. ${text || ''}`);
+  dom.errorNewBtn.focus();
 }
 
-// ===================================================================
-// Отправка файла на анализ: POST /api/v1/analyze
-// ===================================================================
+// ---------------------------------------------------------------- отправка
 
 async function startAnalysis() {
-  if (!state.selectedFile || state.isProcessing) return;
-
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    showErrorBlock('Не указан API-ключ', 'Введите ключ доступа в поле вверху страницы.');
+  if (!state.file || state.busy) return;
+  if (!apiKey()) {
+    note('Введите API-ключ в поле вверху страницы.');
+    dom.apiKey.focus();
     return;
   }
+  dom.errorCard.hidden = true;
+  hideResult();
+  setBusy(true);
+  showProgress({ progress: 0, stage: 'отправка файла' });
+  setStatus('Отправка файла…');
 
-  hideErrorBlock();
-  hideResultBlock();
-  enterProcessingMode();
-
-  const formData = new FormData();
-  formData.append('file', state.selectedFile);
-
+  const body = new FormData();
+  body.append('file', state.file);
   try {
-    const response = await fetch(`${API_BASE}/analyze`, {
-      method: 'POST',
-      headers: { 'X-API-Key': apiKey },
-      body: formData,
-    });
-
-    if (response.status === 401) {
-      throw new ApiError('Неверный API-ключ', 'Проверьте значение ключа и повторите отправку.');
-    }
-    if (response.status === 400) {
-      throw new ApiError('Файл отклонён сервером', 'Проверьте, что это корректный видеофайл .mov.');
-    }
-    if (response.status === 413) {
-      throw new ApiError('Файл слишком большой', 'Уменьшите размер видео и попробуйте снова.');
-    }
-    if (!response.ok) {
-      throw new ApiError('Сервер вернул ошибку', `Код ответа: ${response.status}`);
-    }
-
-    const data = await response.json();
-    state.jobId = data.job_id;
-    dom.progressJobId.textContent = state.jobId;
-
+    const r = await fetch(`${API}/analyze`, { method: 'POST', headers: { 'X-API-Key': apiKey() }, body });
+    if (!r.ok) throw describeHttp(r.status, await r.text());
+    const data = await r.json();
+    state.job = { job_id: data.job_id, filename: state.file.name, started_at: Date.now() };
+    lsSet(LS.active, state.job);
+    addHistory({ ...state.job, verdict: null });
+    dom.progressJob.textContent = data.job_id;
     startPolling();
-  } catch (error) {
-    handleRequestError(error, 'Не удалось отправить файл на анализ');
-    exitProcessingMode();
+  } catch (e) {
+    setBusy(false);
+    if (e instanceof ApiError) showError(e.title, e.text);
+    else showError('Нет соединения с сервером', 'Файл не отправлен. Проверьте сеть и повторите.');
   }
 }
 
-/** Внутренний класс ошибки с заголовком+текстом, чтобы единообразно показывать в errorSection. */
-class ApiError extends Error {
-  constructor(title, text) {
-    super(title);
-    this.title = title;
-    this.text = text;
-  }
-}
-
-/** Единая обработка сетевых/API ошибок на любом этапе запроса. */
-function handleRequestError(error, fallbackTitle) {
-  if (error instanceof ApiError) {
-    showErrorBlock(error.title, error.text);
-    return;
-  }
-  // TypeError от fetch обычно означает обрыв сети/CORS/сервер недоступен.
-  if (error instanceof TypeError) {
-    showErrorBlock('Нет соединения с сервером', 'Проверьте подключение к внутренней сети и повторите попытку.');
-    return;
-  }
-  showErrorBlock(fallbackTitle, error.message || 'Неизвестная ошибка');
-}
-
-// ===================================================================
-// Опрос статуса: GET /api/v1/jobs/{id}, раз в 2 секунды, таймаут 6 минут
-// ===================================================================
+// ---------------------------------------------------------------- опрос
 
 function startPolling() {
-  state.pollStartedAt = Date.now();
-  tickElapsedTime(); // сразу показать 00:00, не ждать первый интервал
-
-  state.elapsedTimer = setInterval(tickElapsedTime, 1000);
-  state.pollTimer = setInterval(pollJobStatus, POLL_INTERVAL_MS);
-
-  // Первый опрос — сразу, не дожидаясь полного интервала.
-  pollJobStatus();
+  stopPolling();
+  state.retry = 0;
+  tickElapsed();
+  state.elapsedTimer = setInterval(tickElapsed, 1000);
+  poll();
 }
 
 function stopPolling() {
-  if (state.pollTimer) clearInterval(state.pollTimer);
-  if (state.elapsedTimer) clearInterval(state.elapsedTimer);
+  clearTimeout(state.pollTimer);
+  clearInterval(state.elapsedTimer);
   state.pollTimer = null;
   state.elapsedTimer = null;
 }
 
-function tickElapsedTime() {
-  const elapsedSec = (Date.now() - state.pollStartedAt) / 1000;
-  dom.progressElapsed.textContent = formatMinutesSeconds(elapsedSec);
+function tickElapsed() {
+  if (!state.job) return;
+  dom.progressElapsed.textContent = fmtMmSs((Date.now() - state.job.started_at) / 1000);
 }
 
-async function pollJobStatus() {
-  // Таймаут общего времени ожидания — если backend завис дольше 6 минут.
-  if (Date.now() - state.pollStartedAt > POLL_TIMEOUT_MS) {
-    stopPolling();
-    showErrorBlock('Обработка не завершилась', 'Превышено время ожидания ответа от сервера (6 минут).');
-    exitProcessingMode();
+function schedule(ms) { state.pollTimer = setTimeout(poll, ms); }
+
+async function poll() {
+  if (!state.job) return;
+  if (Date.now() - state.job.started_at > GIVE_UP_MS) {
+    finish();
+    showError('Сервер не ответил', 'Обработка не завершилась за 10 минут. Задание можно открыть позже из списка последних заданий.');
     return;
   }
-
+  let r;
+  let text;
   try {
-    const response = await fetch(`${API_BASE}/jobs/${state.jobId}`, {
-      headers: { 'X-API-Key': getApiKey() },
-    });
+    r = await fetch(`${API}/jobs/${encodeURIComponent(state.job.job_id)}`, { headers: { 'X-API-Key': apiKey() } });
+    text = await r.text();
+  } catch (e) {
+    return reconnect();                                  // сеть: пробуем снова 2 → 5 → 10 с
+  }
+  if (r.status >= 500) return reconnect();
+  if (!r.ok) {
+    finish();
+    const err = describeHttp(r.status, text);
+    showError(err.title, err.text);
+    return;
+  }
+  reconnected();
+  let job;
+  try { job = JSON.parse(text); } catch (e) { return reconnect(); }
 
-    if (response.status === 401) {
-      stopPolling();
-      throw new ApiError('Неверный API-ключ', 'Ключ стал недействителен во время обработки.');
-    }
-    if (!response.ok) {
-      throw new ApiError('Сервер вернул ошибку', `Код ответа: ${response.status}`);
-    }
-
-    const job = await response.json();
-    updateProgressUi(job);
-
-    if (job.status === 'done') {
-      stopPolling();
-      state.lastResult = job;
-      exitProcessingMode();
-      renderResult(job);
-    } else if (job.status === 'failed') {
-      stopPolling();
-      exitProcessingMode();
-      showErrorBlock('Обработка завершилась с ошибкой', job.error || 'Backend не указал причину.');
-    }
-    // status === 'processing' — просто продолжаем опрос по интервалу.
-  } catch (error) {
-    stopPolling();
-    handleRequestError(error, 'Не удалось получить статус обработки');
-    exitProcessingMode();
+  if (job.status === 'done') {
+    finish();
+    state.resultText = text;
+    state.result = job;
+    updateHistory(job.job_id, { verdict: job.low_coverage ? 'low_coverage' : job.verdict });
+    renderResult(job);
+  } else if (job.status === 'failed') {
+    finish();
+    updateHistory(job.job_id, { verdict: 'failed' });
+    showError('Обработка завершилась с ошибкой', job.error || 'Сервер не указал причину.');
+  } else {
+    showProgress(job);
+    schedule(POLL_MS);
   }
 }
 
-function updateProgressUi(job) {
-  const fraction = typeof job.progress === 'number' ? job.progress : 0;
-  dom.progressFill.style.width = formatPercent(fraction);
-  dom.progressPercent.textContent = formatPercent(fraction);
-  dom.progressStage.textContent = job.stage || 'Обработка…';
+function reconnect() {
+  const delay = RETRY_DELAYS_MS[Math.min(state.retry, RETRY_DELAYS_MS.length - 1)];
+  state.retry += 1;
+  dom.progressCard.classList.add('progress--reconnect');
+  dom.progressStage.textContent = `переподключение… (повтор через ${delay / 1000} с)`;
+  setStatus('Нет связи с сервером, переподключение.');
+  schedule(delay);
 }
 
-// ===================================================================
-// Переключение режимов экрана: загрузка / обработка / результат / ошибка
-// ===================================================================
-
-function enterProcessingMode() {
-  state.isProcessing = true;
-  updateAnalyzeButtonState();
-  setDropzoneDisabled(true);
-
-  dom.progressSection.hidden = false;
-  dom.progressFill.style.width = '0%';
-  dom.progressPercent.textContent = '0%';
-  dom.progressStage.textContent = 'Отправка файла на сервер…';
-  dom.progressElapsed.textContent = '00:00';
-  dom.progressJobId.textContent = '—';
+function reconnected() {
+  if (state.retry) setStatus('Связь восстановлена.');
+  state.retry = 0;
+  dom.progressCard.classList.remove('progress--reconnect');
 }
 
-function exitProcessingMode() {
-  state.isProcessing = false;
-  updateAnalyzeButtonState();
-  setDropzoneDisabled(false);
-  dom.progressSection.hidden = true;
-}
-
-function showErrorBlock(title, text) {
-  dom.errorTitle.textContent = title;
-  dom.errorText.textContent = text || '';
-  dom.errorSection.hidden = false;
-}
-
-function hideErrorBlock() {
-  dom.errorSection.hidden = true;
-}
-
-function hideResultBlock() {
-  dom.resultSection.hidden = true;
-  dom.violationsList.innerHTML = '';
-  dom.timelineTrack.innerHTML = '';
-}
-
-/** Полный сброс к начальному состоянию — кнопка "Новый анализ". */
-function resetToUploadScreen() {
+function finish() {
   stopPolling();
-  state.jobId = null;
-  state.lastResult = null;
-  hideErrorBlock();
-  hideResultBlock();
-  exitProcessingMode();
-  clearSelectedFile();
+  setBusy(false);
+  hideProgress();
+  lsSet(LS.active, null);
 }
 
-// ===================================================================
-// Рендер результата: вердикт, таймлайн, карточки нарушений
-// ===================================================================
+// ---------------------------------------------------------------- экраны
+
+function setBusy(busy) {
+  state.busy = busy;
+  dom.drop.classList.toggle('drop--busy', busy);
+  dom.analyzeBtn.disabled = busy || !state.file;
+  dom.chooseBtn.disabled = busy;
+  dom.fileRemove.disabled = busy;
+}
+
+function showProgress(job) {
+  const pct = Math.round(Math.min(1, Math.max(0, Number(job.progress) || 0)) * 100);
+  dom.progressCard.hidden = false;
+  dom.progressFill.style.width = `${pct}%`;
+  dom.progressBar.setAttribute('aria-valuenow', String(pct));
+  dom.progressPct.textContent = `${pct} %`;
+  const stage = job.stage || 'обработка';
+  if (dom.progressStage.textContent !== stage) {
+    dom.progressStage.textContent = stage;
+    setStatus(`${stage[0].toUpperCase()}${stage.slice(1)}, ${pct} %.`);
+  }
+  if (state.job) dom.progressJob.textContent = state.job.job_id;
+}
+
+function hideProgress() {
+  dom.progressCard.hidden = true;
+  dom.progressCard.classList.remove('progress--reconnect');
+}
+
+function hideResult() {
+  dom.result.hidden = true;
+  dom.eventsSection.hidden = true;
+  dom.events.replaceChildren();
+  state.result = null;
+  state.resultText = null;
+}
+
+function resetAll() {
+  stopPolling();
+  state.job = null;
+  lsSet(LS.active, null);
+  dom.errorCard.hidden = true;
+  hideResult();
+  hideProgress();
+  setBusy(false);
+  clearFile();
+  setStatus('');
+  renderHistory();
+  dom.chooseBtn.focus();
+}
+
+// ---------------------------------------------------------------- результат
 
 function renderResult(job) {
-  // Предупреждение, если модель успела посмотреть мало кадров: вердикт в этом
-  // случае недостоверен, и проверяющий должен это видеть, а не угадывать.
-  if (job.low_coverage) {
-    showErrorBlock('Неполный анализ',
-      'Модель успела разобрать только ' + (job.frames_analyzed || 0) +
-      ' кадров из-за лимита времени. Вердикт недостоверен — повторите загрузку.');
-  }
-  dom.resultSection.hidden = false;
-  renderVerdict(job);
-
+  dom.result.hidden = false;
   const violations = Array.isArray(job.violations) ? job.violations : [];
-  if (job.verdict === 'violation' && violations.length > 0) {
-    renderTimeline(job, violations);
-    renderViolationCards(violations);
+  const dur = job.video && typeof job.video.duration_sec === 'number' ? `Длительность видео ${fmtMmSs(job.video.duration_sec)}.` : '';
+  const frames = job.frames_analyzed != null && job.frames_total_sampled != null
+    ? `Разобрано кадров: ${job.frames_analyzed} из ${job.frames_total_sampled}.` : '';
+
+  dom.verdict.className = 'verdict';
+  if (job.low_coverage) {
+    dom.verdict.classList.add('verdict--warn');
+    dom.verdictTitle.textContent = 'Анализ неполный';
+    dom.verdictText.textContent = `Сервис успел разобрать слишком мало кадров (лимит времени), вердикт недостоверен — повторите загрузку позже. ${frames} ${dur}`.trim();
+  } else if (job.verdict === 'violation') {
+    dom.verdict.classList.add('verdict--bad');
+    dom.verdictTitle.textContent = violations.length === 1
+      ? 'Обнаружено нарушение'
+      : `Обнаружены нарушения: ${violations.length}`;
+    dom.verdictText.textContent = `Каждое событие ниже — с таймкодом, кадрами и пунктом норматива. Окончательную оценку даёт проверяющий. ${dur}`.trim();
   } else {
-    dom.timelineCard.hidden = true;
+    dom.verdict.classList.add('verdict--ok');
+    dom.verdictTitle.textContent = 'Нарушений не обнаружено';
+    dom.verdictText.textContent = `Признаков нарушений в ролике не найдено. ${frames} ${dur}`.trim();
   }
-}
+  setStatus(`Готово. ${dom.verdictTitle.textContent}.`);
 
-function renderVerdict(job) {
-  const duration = job.video && typeof job.video.duration_sec === 'number'
-    ? job.video.duration_sec
-    : null;
-  const durationText = duration != null
-    ? `Длительность видео: ${formatMinutesSeconds(duration)}`
-    : '';
-
-  if (job.verdict === 'no_violation') {
-    dom.verdictBlock.className = 'verdict verdict--ok';
-    dom.verdictBlock.innerHTML = `
-      <div class="verdict__icon" aria-hidden="true">✓</div>
-      <div>
-        <div class="verdict__title">Нарушение не обнаружено</div>
-        <div class="verdict__subtitle">${escapeHtml(durationText)}</div>
-      </div>
-    `;
-    return;
+  if (violations.length) {
+    dom.eventsSection.hidden = false;
+    dom.events.replaceChildren(...violations.map(renderEvent));
   }
-
-  const count = Array.isArray(job.violations) ? job.violations.length : 0;
-  dom.verdictBlock.className = 'verdict verdict--violation';
-  dom.verdictBlock.innerHTML = `
-    <div class="verdict__icon" aria-hidden="true">⚠</div>
-    <div>
-      <div class="verdict__title">Обнаружены признаки возможных нарушений (${count})</div>
-      <div class="verdict__subtitle">${escapeHtml(durationText)}</div>
-    </div>
-  `;
+  dom.downloadBtn.focus();
 }
 
-/** Горизонтальная шкала длиной video.duration_sec с метками на месте каждого нарушения. */
-function renderTimeline(job, violations) {
-  const duration = job.video && typeof job.video.duration_sec === 'number'
-    ? job.video.duration_sec
-    : Math.max(...violations.map((v) => v.timecode_sec), 1);
+function renderEvent(v, i) {
+  const li = el('li', 'event');
+  li.appendChild(el('div', 'event__time', fmtTimecode(v.timecode_sec)));
+  li.appendChild(el('h3', 'event__type', v.type || 'Событие'));
+  if (v.description) li.appendChild(el('p', 'event__desc', v.description));
+  if (v.rule && v.rule.doc_title) li.appendChild(renderRule(v.rule));
+  const frames = Array.isArray(v.evidence_frames) ? v.evidence_frames : [];
+  if (frames.length) li.appendChild(renderFrames(frames, i));
+  return li;
+}
 
-  dom.timelineCard.hidden = false;
-  dom.timelineDuration.textContent = formatMinutesSeconds(duration);
-  dom.timelineTrack.innerHTML = '';
+function renderRule(rule) {
+  const box = el('div', 'rule');
+  const head = el('div', 'rule__head');
+  head.appendChild(el('span', null, rule.clause ? `Норматив, ${rule.clause}` : 'Норматив'));
+  if (rule.verified === false) head.appendChild(el('span', 'badge', 'трактовка'));
+  box.appendChild(head);
+  const doc = [rule.doc_title, rule.doc_requisites, rule.edition].filter(Boolean).join(' — ');
+  box.appendChild(el('p', 'rule__doc', doc));
+  if (rule.quote) box.appendChild(el('blockquote', 'rule__quote', `«${rule.quote}»`));
+  if (rule.verified === false) {
+    // Пояснение из нормативной базы остаётся в JSON; в интерфейсе — только бейдж
+    // и одна строка: служебный текст с именами полей проверяющему не нужен.
+    box.appendChild(el('p', 'rule__note', 'Трактовка, а не дословный запрет: оценку даёт проверяющий.'));
+  }
+  if (rule.url) {
+    const a = el('a', 'rule__link', 'Текст акта на adilet.zan.kz');
+    a.href = rule.url; a.target = '_blank'; a.rel = 'noopener';
+    box.appendChild(a);
+  }
+  return box;
+}
 
-  violations.forEach((violation, index) => {
-    const positionPercent = duration > 0
-      ? Math.min(100, Math.max(0, (violation.timecode_sec / duration) * 100))
-      : 0;
+function renderFrames(frames, eventIndex) {
+  const ul = el('ul', 'frames');
+  ul.setAttribute('aria-label', 'Кадры-доказательства');
+  frames.forEach((f, k) => {
+    const li = el('li');
+    const btn = el('button', 'frame');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', `Открыть кадр ${k + 1} из ${frames.length}, ${fmtTimecode(f.timestamp_sec)}`);
+    const img = el('img');
+    img.src = `data:image/jpeg;base64,${f.image_base64}`;
+    img.alt = `Кадр на ${fmtTimecode(f.timestamp_sec)}`;
+    img.loading = 'lazy';
+    btn.appendChild(img);
+    btn.appendChild(el('span', 'frame__time', fmtTimecode(f.timestamp_sec)));
+    btn.addEventListener('click', () => openBox(frames, k, btn, eventIndex));
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+  return ul;
+}
 
-    const mark = document.createElement('button');
-    mark.type = 'button';
-    mark.className = 'timeline__mark';
-    mark.style.left = `${positionPercent}%`;
-    mark.title = `${violation.type} — ${formatTimecode(violation.timecode_sec)}`;
-    mark.innerHTML = `
-      <span class="timeline__mark-dot"></span>
-      <span class="timeline__mark-label">${formatMinutesSeconds(violation.timecode_sec)}</span>
-    `;
-    mark.addEventListener('click', () => scrollToViolationCard(index));
+// ---------------------------------------------------------------- просмотр кадра
 
-    dom.timelineTrack.appendChild(mark);
+function openBox(frames, index, opener) {
+  state.gallery = { frames, index, opener };
+  dom.box.hidden = false;
+  showBoxFrame();
+  dom.boxClose.focus();
+}
+
+function showBoxFrame() {
+  const { frames, index } = state.gallery;
+  const f = frames[index];
+  dom.boxImg.src = `data:image/jpeg;base64,${f.image_base64}`;
+  dom.boxImg.alt = `Кадр на ${fmtTimecode(f.timestamp_sec)}`;
+  dom.boxCaption.textContent = `${fmtTimecode(f.timestamp_sec)} · кадр ${index + 1} из ${frames.length}`;
+  dom.boxPrev.disabled = index === 0;
+  dom.boxNext.disabled = index === frames.length - 1;
+}
+
+function stepBox(delta) {
+  const g = state.gallery;
+  const next = g.index + delta;
+  if (next < 0 || next >= g.frames.length) return;
+  g.index = next;
+  showBoxFrame();
+}
+
+function closeBox() {
+  dom.box.hidden = true;
+  dom.boxImg.src = '';
+  const opener = state.gallery.opener;
+  state.gallery = { frames: [], index: 0, opener: null };
+  if (opener && document.contains(opener)) opener.focus();
+}
+
+function initBox() {
+  dom.boxClose.addEventListener('click', closeBox);
+  dom.boxPrev.addEventListener('click', () => stepBox(-1));
+  dom.boxNext.addEventListener('click', () => stepBox(1));
+  dom.box.addEventListener('click', (e) => { if (e.target === dom.box) closeBox(); });
+  document.addEventListener('keydown', (e) => {
+    if (dom.box.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeBox(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); stepBox(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); stepBox(1); }
+    else if (e.key === 'Tab') {
+      // фокус остаётся внутри окна просмотра
+      const items = [dom.boxClose, dom.boxPrev, dom.boxNext].filter((b) => !b.disabled);
+      const i = items.indexOf(document.activeElement);
+      const n = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i === items.length - 1 ? 0 : i + 1);
+      e.preventDefault();
+      items[n].focus();
+    }
   });
 }
 
-function scrollToViolationCard(index) {
-  const card = document.getElementById(`violation-card-${index}`);
-  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
+// ---------------------------------------------------------------- JSON
 
-function renderViolationCards(violations) {
-  dom.violationsList.innerHTML = '';
-  violations.forEach((violation, index) => {
-    dom.violationsList.appendChild(buildViolationCard(violation, index));
-  });
-}
-
-/** Собрать одну карточку нарушения со всеми требуемыми по ТЗ полями. */
-function buildViolationCard(violation, index) {
-  const card = document.createElement('article');
-  card.className = 'violation-card';
-  card.id = `violation-card-${index}`;
-
-  const confidencePercent = Math.round((violation.confidence || 0) * 100);
-  const rule = violation.rule || {};
-
-  card.innerHTML = `
-    <div class="violation-card__header">
-      <h3 class="violation-card__type">${escapeHtml(violation.type)}</h3>
-      <span class="violation-card__timecode">
-        ${formatTimecode(violation.timecode_sec)}
-        <small>(${violation.timecode_sec.toFixed(1)} с)</small>
-      </span>
-    </div>
-
-    <div class="violation-card__confidence">
-      <div class="confidence__label">
-        <span>Уверенность модели</span>
-        <span class="confidence__value">${confidencePercent}%</span>
-      </div>
-      <div class="confidence__bar">
-        <div class="confidence__bar-fill" style="width:${confidencePercent}%"></div>
-      </div>
-    </div>
-
-    <p class="violation-card__description">${escapeHtml(violation.description)}</p>
-
-    ${buildRuleBoxHtml(rule)}
-
-    ${buildEvidenceFramesHtml(violation.evidence_frames)}
-  `;
-
-  // Клики по кадрам-доказательствам навешиваем отдельно (нужен доступ к image_base64 из замыкания).
-  attachEvidenceFrameHandlers(card, violation.evidence_frames);
-
-  return card;
-}
-
-/** Блок "Норматив" — документ, реквизиты, пункт, цитата, ссылка. */
-function buildRuleBoxHtml(rule) {
-  if (!rule || !rule.doc_title) return '';
-
-  return `
-    <div class="rule-box">
-      <div class="rule-box__label">Норматив</div>
-      <div class="rule-box__title">${escapeHtml(rule.doc_title)}</div>
-      ${rule.doc_requisites ? `<div class="rule-box__requisites">${escapeHtml(rule.doc_requisites)}</div>` : ''}
-      ${rule.clause ? `<div class="rule-box__clause">${escapeHtml(rule.clause)}${rule.edition ? ` — ${escapeHtml(rule.edition)}` : ''}</div>` : ''}
-      ${rule.quote ? `<blockquote class="rule-box__quote">«${escapeHtml(rule.quote)}»</blockquote>` : ''}
-      ${rule.verified === false ? `
-        <div class="rule-box__unverified">
-          Трактовка, а не дословный запрет${rule.note ? `: ${escapeHtml(rule.note)}` : '.'}
-        </div>
-      ` : ''}
-      ${rule.url ? `
-        <a class="rule-box__link" href="${escapeHtml(rule.url)}" target="_blank" rel="noopener">
-          Открыть документ на adilet.zan.kz ↗
-        </a>
-      ` : ''}
-    </div>
-  `;
-}
-
-/** Ряд превью кадров-доказательств (base64 JPEG). */
-function buildEvidenceFramesHtml(frames) {
-  if (!Array.isArray(frames) || frames.length === 0) return '';
-
-  const framesHtml = frames.map((frame, frameIndex) => `
-    <div class="evidence-frame" data-frame-index="${frameIndex}">
-      <img src="data:image/jpeg;base64,${frame.image_base64}" alt="Кадр-доказательство на ${formatTimecode(frame.timestamp_sec)}">
-      <span class="evidence-frame__time">${formatTimecode(frame.timestamp_sec)}</span>
-    </div>
-  `).join('');
-
-  return `
-    <div class="evidence-frames-block">
-      <div class="evidence-frames__label">Кадры-доказательства</div>
-      <div class="evidence-frames">${framesHtml}</div>
-    </div>
-  `;
-}
-
-/** Клик по кадру открывает его крупно в лайтбоксе. */
-function attachEvidenceFrameHandlers(cardEl, frames) {
-  if (!Array.isArray(frames)) return;
-  const frameElements = cardEl.querySelectorAll('.evidence-frame');
-  frameElements.forEach((el, frameIndex) => {
-    el.addEventListener('click', () => openLightbox(frames[frameIndex].image_base64));
-  });
-}
-
-// ===================================================================
-// Лайтбокс — простое увеличенное окно просмотра кадра (без библиотек)
-// ===================================================================
-
-function openLightbox(base64) {
-  dom.lightboxImg.src = `data:image/jpeg;base64,${base64}`;
-  dom.lightbox.hidden = false;
-}
-
-function closeLightbox() {
-  dom.lightbox.hidden = true;
-  dom.lightboxImg.src = '';
-}
-
-function initLightbox() {
-  dom.lightboxClose.addEventListener('click', closeLightbox);
-  dom.lightbox.addEventListener('click', (event) => {
-    if (event.target === dom.lightbox) closeLightbox(); // клик по фону вне картинки
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !dom.lightbox.hidden) closeLightbox();
-  });
-}
-
-// ===================================================================
-// Экспорт результата: скачать JSON / скопировать в буфер обмена
-// ===================================================================
-
-function downloadResultJson() {
-  if (!state.lastResult) return;
-
-  const blob = new Blob([JSON.stringify(state.lastResult, null, 2)], { type: 'application/json' });
+function downloadJson() {
+  if (!state.resultText) return;
+  const blob = new Blob([state.resultText], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `analysis-${state.lastResult.job_id || 'result'}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
+  const a = el('a');
+  a.href = url;
+  a.download = `analysis-${(state.result && state.result.job_id) || 'result'}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function copyResultJson() {
-  if (!state.lastResult) return;
-  const text = JSON.stringify(state.lastResult, null, 2);
+// ---------------------------------------------------------------- история
 
-  try {
-    await navigator.clipboard.writeText(text);
-    flashButtonText(dom.copyJsonBtn, 'Скопировано ✓');
-  } catch (error) {
-    // Clipboard API может быть недоступен (например, не-HTTPS контекст внутри сети) — запасной путь.
-    flashButtonText(dom.copyJsonBtn, 'Не удалось скопировать');
-  }
+function getHistory() { return lsGet(LS.history, []).filter((h) => h && h.job_id); }
+
+function addHistory(item) {
+  const list = [item, ...getHistory().filter((h) => h.job_id !== item.job_id)].slice(0, HISTORY_MAX);
+  lsSet(LS.history, list);
+  renderHistory();
 }
 
-/** Временно показать сообщение в кнопке, затем вернуть исходный текст. */
-function flashButtonText(button, tempText) {
-  const original = button.textContent;
-  button.textContent = tempText;
-  setTimeout(() => { button.textContent = original; }, 1800);
+function updateHistory(jobId, patch) {
+  const list = getHistory().map((h) => (h.job_id === jobId ? { ...h, ...patch } : h));
+  lsSet(LS.history, list);
+  renderHistory();
 }
 
-// ===================================================================
-// Инициализация приложения
-// ===================================================================
+function renderHistory() {
+  const list = getHistory();
+  dom.historyCard.hidden = list.length === 0;
+  dom.history.replaceChildren(...list.map((h) => {
+    const li = el('li', 'history__item');
+    li.appendChild(el('span', 'history__name', h.filename || h.job_id));
+    li.appendChild(el('span', 'history__when', fmtWhen(h.started_at)));
+    const v = h.verdict;
+    const badge = v === 'violation' ? ['history__verdict--bad', 'нарушение']
+      : v === 'no_violation' ? ['history__verdict--ok', 'нарушений нет']
+        : v === 'low_coverage' ? ['history__verdict--run', 'анализ неполный']
+          : v === 'failed' ? ['history__verdict--bad', 'ошибка']
+            : ['history__verdict--run', 'в обработке'];
+    li.appendChild(el('span', `history__verdict ${badge[0]}`, badge[1]));
+    const btn = el('button', 'btn btn--ghost btn--small', 'Открыть');
+    btn.type = 'button';
+    btn.disabled = state.busy;
+    btn.addEventListener('click', () => resumeJob(h));
+    li.appendChild(btn);
+    return li;
+  }));
+}
 
-function initEventListeners() {
+function resumeJob(h) {
+  if (state.busy) return;
+  if (!apiKey()) { note('Введите API-ключ в поле вверху страницы.'); dom.apiKey.focus(); return; }
+  dom.errorCard.hidden = true;
+  hideResult();
+  note('');
+  state.job = { job_id: h.job_id, filename: h.filename, started_at: h.started_at || Date.now() };
+  lsSet(LS.active, state.job);
+  setBusy(true);
+  showProgress({ progress: 0, stage: 'запрос состояния задания' });
+  dom.progressJob.textContent = h.job_id;
+  startPolling();
+}
+
+// ---------------------------------------------------------------- запуск
+
+function initEvents() {
   dom.analyzeBtn.addEventListener('click', startAnalysis);
-  dom.newAnalysisBtn.addEventListener('click', resetToUploadScreen);
-  dom.downloadJsonBtn.addEventListener('click', downloadResultJson);
-  dom.copyJsonBtn.addEventListener('click', copyResultJson);
+  dom.newBtn.addEventListener('click', resetAll);
+  dom.errorNewBtn.addEventListener('click', resetAll);
+  dom.downloadBtn.addEventListener('click', downloadJson);
 }
 
 function init() {
-  initApiKeyField();
-  initFileSelection();
-  initLightbox();
-  initEventListeners();
+  initKey();
+  initFile();
+  initBox();
+  initEvents();
+  renderHistory();
+  // После обновления страницы продолжаем опрос текущего задания.
+  const active = lsGet(LS.active, null);
+  if (active && active.job_id) {
+    state.job = active;
+    setBusy(true);
+    showProgress({ progress: 0, stage: 'восстановление после обновления страницы' });
+    dom.progressJob.textContent = active.job_id;
+    startPolling();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
