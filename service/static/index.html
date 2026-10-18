@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Контроль кассовой дисциплины</title>
-<link rel="stylesheet" href="/static/style.css?v=654a380">
+<link rel="stylesheet" href="/static/style.css?v=dev">
 </head>
 <body>
 
@@ -13,132 +13,179 @@
 
 <header class="top">
   <div class="wrap top__inner">
-    <h1 class="top__title">Контроль кассовой дисциплины</h1>
-    <div class="key">
-      <label class="key__label" for="apiKey">API-ключ</label>
-      <div class="key__row">
-        <input type="password" id="apiKey" class="key__input" autocomplete="off" spellcheck="false"
-               placeholder="Ключ из формы сдачи" aria-describedby="apiKeyHint">
-        <button type="button" id="apiKeyToggle" class="key__toggle" aria-pressed="false"
-                aria-label="Показать ключ">
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-          </svg>
-        </button>
-      </div>
-      <p class="key__hint" id="apiKeyHint">Передаётся в заголовке X-API-Key. Запоминается в этом браузере.</p>
+    <div class="top__title">Контроль кассовой дисциплины</div>
+    <div class="pill pill--unknown" id="health" aria-live="polite">
+      <span class="pill__dot" aria-hidden="true"></span>
+      <span id="healthText">Проверка сервиса…</span>
     </div>
   </div>
 </header>
 
 <main class="wrap" id="main">
 
+  <div class="tabs" role="tablist" aria-label="Разделы">
+    <button type="button" class="tab" role="tab" id="tabAnalyze" aria-selected="true" aria-controls="panelAnalyze">Анализ</button>
+    <button type="button" class="tab" role="tab" id="tabHistory" aria-selected="false" aria-controls="panelHistory" tabindex="-1">История</button>
+  </div>
+
   <p class="status" id="status" aria-live="polite"></p>
 
-  <section class="card" id="uploadCard" aria-labelledby="uploadTitle">
-    <h2 class="card__title" id="uploadTitle">Видео</h2>
-    <div class="drop" id="drop">
-      <input type="file" id="fileInput" accept=".mov,.mp4,video/quicktime,video/mp4" hidden>
-      <div class="drop__empty" id="dropEmpty">
-        <svg class="drop__icon" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false">
-          <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <p class="drop__text">Перетащите видеофайл сюда или</p>
-        <button type="button" class="btn btn--secondary" id="chooseBtn">Выбрать файл</button>
-        <p class="drop__hint">.mov до 200 МБ, обработка около минуты</p>
-      </div>
-      <div class="drop__file" id="dropFile" hidden>
-        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        </svg>
-        <div class="drop__meta">
-          <div class="drop__name" id="fileName"></div>
-          <div class="drop__size" id="fileSize"></div>
+  <div id="panelAnalyze" role="tabpanel" aria-labelledby="tabAnalyze">
+
+    <div class="grid grid--upload" id="uploadScreen">
+      <section class="card" aria-labelledby="uploadTitle">
+        <h2 class="h2" id="uploadTitle">Загрузите видео</h2>
+        <div class="drop" id="drop">
+          <input type="file" id="fileInput" accept=".mov,.mp4,video/quicktime,video/mp4" hidden>
+          <div class="drop__empty" id="dropEmpty">
+            <svg class="drop__icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" focusable="false">
+              <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="drop__text">Перетащите видеофайл сюда или</p>
+            <button type="button" class="btn btn--secondary" id="chooseBtn">Выбрать файл</button>
+            <p class="drop__hint">.mov до 200 МБ, обработка около минуты</p>
+          </div>
+          <div class="drop__file" id="dropFile" hidden>
+            <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+            <div class="drop__meta">
+              <div class="drop__name" id="fileName"></div>
+              <div class="drop__size" id="fileSize"></div>
+            </div>
+            <button type="button" class="btn btn--ghost" id="fileRemove" aria-label="Убрать выбранный файл">Убрать</button>
+          </div>
         </div>
-        <button type="button" class="btn btn--ghost" id="fileRemove" aria-label="Убрать выбранный файл">Убрать</button>
+        <p class="note" id="uploadNote" role="alert"></p>
+
+        <div class="key">
+          <label class="label" for="apiKey">API-ключ</label>
+          <div class="key__row">
+            <input type="password" id="apiKey" class="input" autocomplete="off" spellcheck="false"
+                   placeholder="Ключ из формы сдачи" aria-describedby="apiKeyHint">
+            <button type="button" id="apiKeyToggle" class="key__toggle" aria-pressed="false" aria-label="Показать ключ">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </button>
+          </div>
+          <p class="hint" id="apiKeyHint">Передаётся в заголовке X-API-Key. Запоминается в этом браузере.</p>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="analyzeBtn" disabled>Анализировать</button>
+        </div>
+      </section>
+
+      <aside class="side" aria-labelledby="howTitle">
+        <h2 class="h2 h2--side" id="howTitle">Как это работает</h2>
+        <ol class="steps">
+          <li class="step"><span class="step__n" aria-hidden="true">1</span><div><div class="step__t">Загрузите запись</div><div class="step__d">Видео с камеры кассового узла, .mov или .mp4</div></div></li>
+          <li class="step"><span class="step__n" aria-hidden="true">2</span><div><div class="step__t">Дождитесь анализа</div><div class="step__d">Обычно около минуты, этапы видны на экране</div></div></li>
+          <li class="step"><span class="step__n" aria-hidden="true">3</span><div><div class="step__t">Изучите результат</div><div class="step__d">Таймкоды, кадры-доказательства, пункт акта</div></div></li>
+        </ol>
+        <div class="banner">
+          <span class="tag">Локально</span>
+          <p class="banner__t">Локальная обработка: видео не покидает контур, облачные AI-сервисы не используются.</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="card" id="progressCard" hidden aria-labelledby="progressTitle">
+      <h2 class="h2" id="progressTitle">Обработка</h2>
+      <div class="bar" role="progressbar" id="progressBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="progressStage">
+        <div class="bar__fill" id="progressFill"></div>
       </div>
-    </div>
-    <p class="note" id="uploadNote" role="alert"></p>
-    <div class="actions">
-      <button type="button" class="btn btn--primary" id="analyzeBtn" disabled>Анализировать</button>
-    </div>
-  </section>
-
-  <section class="card" id="progressCard" hidden aria-labelledby="progressTitle">
-    <h2 class="card__title" id="progressTitle">Обработка</h2>
-    <div class="bar" role="progressbar" id="progressBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
-         aria-labelledby="progressStage">
-      <div class="bar__fill" id="progressFill"></div>
-    </div>
-    <div class="progress">
-      <span class="progress__stage" id="progressStage">отправка файла</span>
-      <span class="progress__pct" id="progressPct">0 %</span>
-    </div>
-    <p class="progress__meta">Прошло <strong id="progressElapsed">00:00</strong> · задание <code id="progressJob">—</code></p>
-  </section>
-
-  <section class="card card--error" id="errorCard" hidden role="alert">
-    <h2 class="card__title" id="errorTitle">Ошибка</h2>
-    <p id="errorText"></p>
-    <div class="actions">
-      <button type="button" class="btn btn--ghost" id="errorNewBtn">Новый анализ</button>
-    </div>
-  </section>
-
-  <section id="result" hidden aria-labelledby="verdictTitle">
-    <div class="verdict" id="verdict">
-      <h2 class="verdict__title" id="verdictTitle"></h2>
-      <p class="verdict__text" id="verdictText"></p>
-    </div>
-
-    <div class="actions actions--result">
-      <button type="button" class="btn btn--secondary" id="downloadBtn">Скачать JSON</button>
-      <button type="button" class="btn btn--ghost" id="newBtn">Новый анализ</button>
-    </div>
-
-    <section id="eventsSection" hidden aria-labelledby="eventsTitle">
-      <h2 class="section__title" id="eventsTitle">События</h2>
-      <ol class="events" id="events"></ol>
+      <div class="progress">
+        <span class="progress__stage" id="progressStage">отправка файла</span>
+        <span class="progress__pct" id="progressPct">0 %</span>
+      </div>
+      <p class="hint">Прошло <strong id="progressElapsed">00:00</strong> · задание <code id="progressJob">—</code></p>
     </section>
-  </section>
 
-  <section class="card card--history" id="historyCard" hidden aria-labelledby="historyTitle">
-    <h2 class="card__title" id="historyTitle">Последние задания</h2>
-    <ul class="history" id="history"></ul>
-  </section>
+    <section class="card card--error" id="errorCard" hidden role="alert">
+      <h2 class="h2" id="errorTitle">Ошибка</h2>
+      <p id="errorText"></p>
+      <div class="actions">
+        <button type="button" class="btn btn--ghost" id="errorNewBtn">Новый анализ</button>
+      </div>
+    </section>
+
+    <section id="result" hidden aria-labelledby="verdictTitle">
+      <div class="verdict" id="verdict">
+        <h2 class="verdict__title" id="verdictTitle"></h2>
+        <p class="verdict__text" id="verdictText"></p>
+      </div>
+
+      <div class="grid grid--result" id="resultGrid" hidden>
+        <section class="card card--frame" aria-labelledby="frameTitle">
+          <h2 class="visually-hidden" id="frameTitle">Кадр выбранного события</h2>
+          <div class="player" id="player" hidden>
+            <video id="video" class="player__video" controls preload="metadata" playsinline></video>
+          </div>
+          <figure class="big">
+            <img class="big__img" id="bigImg" alt="">
+            <figcaption class="big__cap">
+              <span class="chip" id="bigTime">00:00.0</span>
+              <button type="button" class="btn btn--secondary btn--small" id="openFrameBtn">Открыть</button>
+            </figcaption>
+          </figure>
+          <ul class="strip" id="strip" aria-label="Кадры-доказательства события"></ul>
+        </section>
+
+        <section class="card card--list" aria-labelledby="eventsTitle">
+          <h2 class="h2 h2--small" id="eventsTitle">События</h2>
+          <ol class="events" id="events"></ol>
+        </section>
+      </div>
+
+      <section class="card" id="details" hidden aria-labelledby="detailsType">
+        <div class="details__head">
+          <span class="chip" id="detailsTime"></span>
+          <h3 class="h3" id="detailsType"></h3>
+        </div>
+        <p class="details__desc" id="detailsDesc"></p>
+        <div id="detailsRule"></div>
+      </section>
+
+      <div class="actions actions--result">
+        <button type="button" class="btn btn--secondary" id="downloadBtn">Скачать JSON</button>
+        <button type="button" class="btn btn--ghost" id="newBtn">Новый анализ</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="panelHistory" role="tabpanel" aria-labelledby="tabHistory" hidden>
+    <section class="card" aria-labelledby="historyTitle">
+      <h2 class="h2" id="historyTitle">Последние задания</h2>
+      <p class="hint" id="historyEmpty">Пока нет ни одного задания.</p>
+      <ul class="history" id="history"></ul>
+    </section>
+  </div>
 
 </main>
 
 <footer class="foot">
-  <div class="wrap">
-    Контроль кассовой дисциплины · Koshakanchiki · работает локально, без облачных сервисов
-    · <code id="build">654a380</code>
-  </div>
+  <div class="wrap">Контроль кассовой дисциплины · Koshakanchiki · <code id="build">dev</code></div>
 </footer>
 
 <div class="box" id="box" hidden role="dialog" aria-modal="true" aria-label="Кадр-доказательство">
   <button type="button" class="box__btn box__close" id="boxClose" aria-label="Закрыть (Esc)">
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-      <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   </button>
   <button type="button" class="box__btn box__prev" id="boxPrev" aria-label="Предыдущий кадр (стрелка влево)">
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-      <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <figure class="box__figure">
     <img class="box__img" id="boxImg" alt="">
     <figcaption class="box__caption" id="boxCaption"></figcaption>
   </figure>
   <button type="button" class="box__btn box__next" id="boxNext" aria-label="Следующий кадр (стрелка вправо)">
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-      <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </div>
 
-<script src="/static/app.js?v=654a380"></script>
+<script src="/static/app.js?v=dev"></script>
 </body>
 </html>

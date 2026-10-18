@@ -6,6 +6,7 @@
  * Контракт API (не менять):
  *   POST /api/v1/analyze   multipart/form-data, поле file; заголовок X-API-Key  -> {job_id, status}
  *   GET  /api/v1/jobs/{id} заголовок X-API-Key                                  -> статус + результат
+ *   GET  /api/v1/health                                                         -> {status, models}
  */
 
 const API = '/api/v1';
@@ -13,15 +14,17 @@ const MAX_MB = 200;                       // лимит сервера (MAX_UPLO
 const RETRY_DELAYS_MS = [2000, 5000, 10000];
 const POLL_MS = 2000;
 const GIVE_UP_MS = 10 * 60 * 1000;        // сервер обязан ответить за 5 минут; 10 — с запасом
+const HEALTH_MS = 30000;
 const HISTORY_MAX = 5;
 
 const LS = { key: 'kk_api_key', active: 'kk_active_job', history: 'kk_history' };
 
 const $ = (id) => document.getElementById(id);
 const dom = {
-  status: $('status'),
+  status: $('status'), health: $('health'), healthText: $('healthText'),
+  tabAnalyze: $('tabAnalyze'), tabHistory: $('tabHistory'), panelAnalyze: $('panelAnalyze'), panelHistory: $('panelHistory'),
   apiKey: $('apiKey'), apiKeyToggle: $('apiKeyToggle'),
-  uploadCard: $('uploadCard'), drop: $('drop'), fileInput: $('fileInput'), chooseBtn: $('chooseBtn'),
+  uploadScreen: $('uploadScreen'), drop: $('drop'), fileInput: $('fileInput'), chooseBtn: $('chooseBtn'),
   dropEmpty: $('dropEmpty'), dropFile: $('dropFile'), fileName: $('fileName'), fileSize: $('fileSize'),
   fileRemove: $('fileRemove'), uploadNote: $('uploadNote'), analyzeBtn: $('analyzeBtn'),
   progressCard: $('progressCard'), progressBar: $('progressBar'), progressFill: $('progressFill'),
@@ -29,9 +32,12 @@ const dom = {
   progressJob: $('progressJob'),
   errorCard: $('errorCard'), errorTitle: $('errorTitle'), errorText: $('errorText'), errorNewBtn: $('errorNewBtn'),
   result: $('result'), verdict: $('verdict'), verdictTitle: $('verdictTitle'), verdictText: $('verdictText'),
+  resultGrid: $('resultGrid'), player: $('player'), video: $('video'),
+  bigImg: $('bigImg'), bigTime: $('bigTime'), openFrameBtn: $('openFrameBtn'), strip: $('strip'),
+  events: $('events'), details: $('details'), detailsTime: $('detailsTime'), detailsType: $('detailsType'),
+  detailsDesc: $('detailsDesc'), detailsRule: $('detailsRule'),
   downloadBtn: $('downloadBtn'), newBtn: $('newBtn'),
-  eventsSection: $('eventsSection'), events: $('events'),
-  historyCard: $('historyCard'), history: $('history'),
+  history: $('history'), historyEmpty: $('historyEmpty'),
   box: $('box'), boxImg: $('boxImg'), boxCaption: $('boxCaption'),
   boxClose: $('boxClose'), boxPrev: $('boxPrev'), boxNext: $('boxNext'),
 };
@@ -45,6 +51,9 @@ const state = {
   retry: 0,
   resultText: null,       // сырой текст ответа — «Скачать JSON» отдаёт его байт в байт
   result: null,
+  selected: 0,            // индекс выбранного события
+  frameIndex: 0,          // индекс кадра выбранного события в большом окне
+  videoUrl: null,         // object URL файла, если он ещё в памяти браузера
   gallery: { frames: [], index: 0, opener: null },
 };
 
@@ -82,6 +91,44 @@ function lsSet(key, value) {
   catch (e) { /* localStorage может быть недоступен — интерфейс работает без него */ }
 }
 function setStatus(text) { dom.status.textContent = text || ''; }
+
+// ---------------------------------------------------------------- вкладки и состояние сервиса
+
+function showTab(name) {
+  const analyze = name === 'analyze';
+  dom.tabAnalyze.setAttribute('aria-selected', String(analyze));
+  dom.tabHistory.setAttribute('aria-selected', String(!analyze));
+  dom.tabAnalyze.tabIndex = analyze ? 0 : -1;
+  dom.tabHistory.tabIndex = analyze ? -1 : 0;
+  dom.panelAnalyze.hidden = !analyze;
+  dom.panelHistory.hidden = analyze;
+}
+
+function initTabs() {
+  dom.tabAnalyze.addEventListener('click', () => showTab('analyze'));
+  dom.tabHistory.addEventListener('click', () => showTab('history'));
+  [dom.tabAnalyze, dom.tabHistory].forEach((t) => t.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const other = t === dom.tabAnalyze ? dom.tabHistory : dom.tabAnalyze;
+      showTab(other === dom.tabAnalyze ? 'analyze' : 'history');
+      other.focus();
+    }
+  }));
+}
+
+async function checkHealth() {
+  let ok = false;
+  try {
+    const r = await fetch(`${API}/health`, { cache: 'no-store' });
+    ok = r.ok && (await r.json()).status === 'ok';
+  } catch (e) { ok = false; }
+  dom.health.classList.toggle('pill--ok', ok);
+  dom.health.classList.toggle('pill--down', !ok);
+  dom.health.classList.remove('pill--unknown');
+  dom.healthText.textContent = ok ? 'Сервис онлайн' : 'Сервис недоступен';
+  return ok;
+}
 
 // ---------------------------------------------------------------- ключ
 
@@ -163,7 +210,7 @@ class ApiError extends Error {
 function describeHttp(status, bodyText) {
   let detail = '';
   try { detail = JSON.parse(bodyText).detail || ''; } catch (e) { detail = ''; }
-  if (status === 401) return new ApiError('Неверный API-ключ', 'Сервер ответил 401. Проверьте ключ в поле вверху страницы и повторите.');
+  if (status === 401) return new ApiError('Неверный API-ключ', 'Сервер ответил 401. Проверьте ключ в поле под зоной загрузки и повторите.');
   if (status === 400) return new ApiError('Файл отклонён', `Сервер ответил 400: ${detail || 'ожидается видеофайл .mov'}.`);
   if (status === 413) return new ApiError('Файл слишком большой', `Сервер ответил 413: ${detail || `файл больше ${MAX_MB} МБ`}.`);
   if (status === 404) return new ApiError('Задание не найдено', 'Сервер ответил 404: задание с таким номером не найдено — возможно, сервис был перезапущен.');
@@ -184,7 +231,7 @@ function showError(title, text) {
 async function startAnalysis() {
   if (!state.file || state.busy) return;
   if (!apiKey()) {
-    note('Введите API-ключ в поле вверху страницы.');
+    note('Введите API-ключ.');
     dom.apiKey.focus();
     return;
   }
@@ -240,7 +287,7 @@ async function poll() {
   if (!state.job) return;
   if (Date.now() - state.job.started_at > GIVE_UP_MS) {
     finish();
-    showError('Сервер не ответил', 'Обработка не завершилась за 10 минут. Задание можно открыть позже из списка последних заданий.');
+    showError('Сервер не ответил', 'Обработка не завершилась за 10 минут. Задание можно открыть позже на вкладке «История».');
     return;
   }
   let r;
@@ -329,10 +376,20 @@ function hideProgress() {
   dom.progressCard.classList.remove('progress--reconnect');
 }
 
+function releaseVideo() {
+  if (state.videoUrl) { URL.revokeObjectURL(state.videoUrl); state.videoUrl = null; }
+  dom.video.removeAttribute('src');
+  dom.video.load();
+  dom.player.hidden = true;
+}
+
 function hideResult() {
   dom.result.hidden = true;
-  dom.eventsSection.hidden = true;
+  dom.resultGrid.hidden = true;
+  dom.details.hidden = true;
   dom.events.replaceChildren();
+  dom.strip.replaceChildren();
+  releaseVideo();
   state.result = null;
   state.resultText = null;
 }
@@ -348,6 +405,7 @@ function resetAll() {
   clearFile();
   setStatus('');
   renderHistory();
+  showTab('analyze');
   dom.chooseBtn.focus();
 }
 
@@ -367,10 +425,8 @@ function renderResult(job) {
     dom.verdictText.textContent = `Сервис успел разобрать слишком мало кадров (лимит времени), вердикт недостоверен — повторите загрузку позже. ${frames} ${dur}`.trim();
   } else if (job.verdict === 'violation') {
     dom.verdict.classList.add('verdict--bad');
-    dom.verdictTitle.textContent = violations.length === 1
-      ? 'Обнаружено нарушение'
-      : `Обнаружены нарушения: ${violations.length}`;
-    dom.verdictText.textContent = `Каждое событие ниже — с таймкодом, кадрами и пунктом норматива. Окончательную оценку даёт проверяющий. ${dur}`.trim();
+    dom.verdictTitle.textContent = violations.length === 1 ? 'Обнаружено нарушение' : `Обнаружены нарушения: ${violations.length}`;
+    dom.verdictText.textContent = `Каждое событие — с таймкодом, кадрами и пунктом норматива. Окончательную оценку даёт проверяющий. ${dur}`.trim();
   } else {
     dom.verdict.classList.add('verdict--ok');
     dom.verdictTitle.textContent = 'Нарушений не обнаружено';
@@ -379,21 +435,106 @@ function renderResult(job) {
   setStatus(`Готово. ${dom.verdictTitle.textContent}.`);
 
   if (violations.length) {
-    dom.eventsSection.hidden = false;
-    dom.events.replaceChildren(...violations.map(renderEvent));
+    dom.resultGrid.hidden = false;
+    dom.details.hidden = false;
+    dom.events.replaceChildren(...violations.map((v, i) => {
+      const li = el('li');
+      const btn = el('button', 'event');
+      btn.type = 'button';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.appendChild(el('span', 'event__n', String(i + 1)));
+      btn.appendChild(el('span', 'event__type', v.type || 'Событие'));
+      btn.appendChild(el('span', 'event__time', fmtTimecode(v.timecode_sec)));
+      btn.addEventListener('click', () => selectEvent(i, true));
+      li.appendChild(btn);
+      return li;
+    }));
+    setupPlayer(job);
+    selectEvent(0, false);
   }
   dom.downloadBtn.focus();
 }
 
-function renderEvent(v, i) {
-  const li = el('li', 'event');
-  li.appendChild(el('div', 'event__time', fmtTimecode(v.timecode_sec)));
-  li.appendChild(el('h3', 'event__type', v.type || 'Событие'));
-  if (v.description) li.appendChild(el('p', 'event__desc', v.description));
-  if (v.rule && v.rule.doc_title) li.appendChild(renderRule(v.rule));
+/* Плеер показывается, только пока файл ещё в памяти этой вкладки (та же сессия):
+   после обновления страницы файла нет — остаются кадры. Если браузер не умеет
+   играть этот .mov, плеер прячется молча. */
+function setupPlayer(job) {
+  releaseVideo();
+  if (!state.file || !state.job || state.job.filename !== state.file.name) return;
+  if (!dom.video.canPlayType) return;
+  state.videoUrl = URL.createObjectURL(state.file);
+  dom.video.src = state.videoUrl;
+  dom.player.hidden = false;
+  dom.video.onerror = () => releaseVideo();
+  dom.video.onloadedmetadata = () => {
+    if (!isFinite(dom.video.duration) || dom.video.videoWidth === 0) releaseVideo();
+  };
+}
+
+function seekVideo(sec) {
+  if (dom.player.hidden || !state.videoUrl) return;
+  const t = Math.max(0, (Number(sec) || 0) - 2);
+  const go = () => {
+    try { dom.video.currentTime = t; } catch (e) { return; }
+    const p = dom.video.play();
+    if (p && p.catch) p.catch(() => {});
+  };
+  if (dom.video.readyState >= 1) go(); else dom.video.addEventListener('loadedmetadata', go, { once: true });
+}
+
+function selectEvent(i, byUser) {
+  const v = state.result.violations[i];
+  state.selected = i;
+  state.frameIndex = 0;
+  dom.events.querySelectorAll('.event').forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
   const frames = Array.isArray(v.evidence_frames) ? v.evidence_frames : [];
-  if (frames.length) li.appendChild(renderFrames(frames, i));
-  return li;
+  // в большом окне — кадр, ближайший к таймкоду события
+  if (frames.length) {
+    let best = 0;
+    frames.forEach((f, k) => { if (Math.abs(f.timestamp_sec - v.timecode_sec) < Math.abs(frames[best].timestamp_sec - v.timecode_sec)) best = k; });
+    state.frameIndex = best;
+  }
+  renderBig(frames);
+  dom.strip.replaceChildren(...frames.map((f, k) => {
+    const li = el('li');
+    const btn = el('button', 'frame');
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', String(k === state.frameIndex));
+    btn.setAttribute('aria-label', `Кадр ${k + 1} из ${frames.length}, ${fmtTimecode(f.timestamp_sec)}`);
+    const img = el('img');
+    img.src = `data:image/jpeg;base64,${f.image_base64}`;
+    img.alt = '';
+    btn.appendChild(img);
+    btn.appendChild(el('span', 'frame__time', fmtTimecode(f.timestamp_sec)));
+    btn.addEventListener('click', () => {
+      state.frameIndex = k;
+      dom.strip.querySelectorAll('.frame').forEach((b, j) => b.setAttribute('aria-pressed', String(j === k)));
+      renderBig(frames);
+    });
+    li.appendChild(btn);
+    return li;
+  }));
+  dom.detailsTime.textContent = fmtTimecode(v.timecode_sec);
+  dom.detailsType.textContent = v.type || 'Событие';
+  dom.detailsDesc.textContent = v.description || '';
+  dom.detailsRule.replaceChildren();
+  if (v.rule && v.rule.doc_title) dom.detailsRule.appendChild(renderRule(v.rule));
+  if (byUser) seekVideo(v.timecode_sec);
+}
+
+function renderBig(frames) {
+  const f = frames[state.frameIndex];
+  if (!f) {
+    dom.bigImg.removeAttribute('src');
+    dom.bigImg.alt = 'Кадров-доказательств нет';
+    dom.bigTime.textContent = '—';
+    dom.openFrameBtn.disabled = true;
+    return;
+  }
+  dom.bigImg.src = `data:image/jpeg;base64,${f.image_base64}`;
+  dom.bigImg.alt = `Кадр на ${fmtTimecode(f.timestamp_sec)}`;
+  dom.bigTime.textContent = fmtTimecode(f.timestamp_sec);
+  dom.openFrameBtn.disabled = false;
 }
 
 function renderRule(rule) {
@@ -402,12 +543,10 @@ function renderRule(rule) {
   head.appendChild(el('span', null, rule.clause ? `Норматив, ${rule.clause}` : 'Норматив'));
   if (rule.verified === false) head.appendChild(el('span', 'badge', 'трактовка'));
   box.appendChild(head);
-  const doc = [rule.doc_title, rule.doc_requisites, rule.edition].filter(Boolean).join(' — ');
-  box.appendChild(el('p', 'rule__doc', doc));
+  box.appendChild(el('p', 'rule__doc', [rule.doc_title, rule.doc_requisites, rule.edition].filter(Boolean).join(' — ')));
   if (rule.quote) box.appendChild(el('blockquote', 'rule__quote', `«${rule.quote}»`));
   if (rule.verified === false) {
-    // Пояснение из нормативной базы остаётся в JSON; в интерфейсе — только бейдж
-    // и одна строка: служебный текст с именами полей проверяющему не нужен.
+    // Пояснение из нормативной базы остаётся в JSON; в интерфейсе — бейдж и одна строка.
     box.appendChild(el('p', 'rule__note', 'Трактовка, а не дословный запрет: оценку даёт проверяющий.'));
   }
   if (rule.url) {
@@ -416,27 +555,6 @@ function renderRule(rule) {
     box.appendChild(a);
   }
   return box;
-}
-
-function renderFrames(frames, eventIndex) {
-  const ul = el('ul', 'frames');
-  ul.setAttribute('aria-label', 'Кадры-доказательства');
-  frames.forEach((f, k) => {
-    const li = el('li');
-    const btn = el('button', 'frame');
-    btn.type = 'button';
-    btn.setAttribute('aria-label', `Открыть кадр ${k + 1} из ${frames.length}, ${fmtTimecode(f.timestamp_sec)}`);
-    const img = el('img');
-    img.src = `data:image/jpeg;base64,${f.image_base64}`;
-    img.alt = `Кадр на ${fmtTimecode(f.timestamp_sec)}`;
-    img.loading = 'lazy';
-    btn.appendChild(img);
-    btn.appendChild(el('span', 'frame__time', fmtTimecode(f.timestamp_sec)));
-    btn.addEventListener('click', () => openBox(frames, k, btn, eventIndex));
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
-  return ul;
 }
 
 // ---------------------------------------------------------------- просмотр кадра
@@ -475,6 +593,11 @@ function closeBox() {
 }
 
 function initBox() {
+  dom.openFrameBtn.addEventListener('click', () => {
+    const v = state.result && state.result.violations[state.selected];
+    const frames = v && Array.isArray(v.evidence_frames) ? v.evidence_frames : [];
+    if (frames.length) openBox(frames, state.frameIndex, dom.openFrameBtn);
+  });
   dom.boxClose.addEventListener('click', closeBox);
   dom.boxPrev.addEventListener('click', () => stepBox(-1));
   dom.boxNext.addEventListener('click', () => stepBox(1));
@@ -485,7 +608,6 @@ function initBox() {
     else if (e.key === 'ArrowLeft') { e.preventDefault(); stepBox(-1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); stepBox(1); }
     else if (e.key === 'Tab') {
-      // фокус остаётся внутри окна просмотра
       const items = [dom.boxClose, dom.boxPrev, dom.boxNext].filter((b) => !b.disabled);
       const i = items.indexOf(document.activeElement);
       const n = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i === items.length - 1 ? 0 : i + 1);
@@ -515,20 +637,18 @@ function downloadJson() {
 function getHistory() { return lsGet(LS.history, []).filter((h) => h && h.job_id); }
 
 function addHistory(item) {
-  const list = [item, ...getHistory().filter((h) => h.job_id !== item.job_id)].slice(0, HISTORY_MAX);
-  lsSet(LS.history, list);
+  lsSet(LS.history, [item, ...getHistory().filter((h) => h.job_id !== item.job_id)].slice(0, HISTORY_MAX));
   renderHistory();
 }
 
 function updateHistory(jobId, patch) {
-  const list = getHistory().map((h) => (h.job_id === jobId ? { ...h, ...patch } : h));
-  lsSet(LS.history, list);
+  lsSet(LS.history, getHistory().map((h) => (h.job_id === jobId ? { ...h, ...patch } : h)));
   renderHistory();
 }
 
 function renderHistory() {
   const list = getHistory();
-  dom.historyCard.hidden = list.length === 0;
+  dom.historyEmpty.hidden = list.length > 0;
   dom.history.replaceChildren(...list.map((h) => {
     const li = el('li', 'history__item');
     li.appendChild(el('span', 'history__name', h.filename || h.job_id));
@@ -551,7 +671,8 @@ function renderHistory() {
 
 function resumeJob(h) {
   if (state.busy) return;
-  if (!apiKey()) { note('Введите API-ключ в поле вверху страницы.'); dom.apiKey.focus(); return; }
+  showTab('analyze');
+  if (!apiKey()) { note('Введите API-ключ.'); dom.apiKey.focus(); return; }
   dom.errorCard.hidden = true;
   hideResult();
   note('');
@@ -573,11 +694,14 @@ function initEvents() {
 }
 
 function init() {
+  initTabs();
   initKey();
   initFile();
   initBox();
   initEvents();
   renderHistory();
+  checkHealth();
+  setInterval(checkHealth, HEALTH_MS);
   // После обновления страницы продолжаем опрос текущего задания.
   const active = lsGet(LS.active, null);
   if (active && active.job_id) {
