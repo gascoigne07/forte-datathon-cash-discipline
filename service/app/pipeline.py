@@ -134,6 +134,20 @@ def analyze(path: str, progress: Progress = _noop, queued: int = 0,
             vcost.append((time.time() - t_batch) / len(chunk))
             for i, raw in zip(chunk, answers):
                 series[pos[round(frames[i].t, 3)]][1].update(vlm.parse(raw))
+        # Сейф/шкаф по кропу области за столом (правило 11, SAFE_RULE=1).
+        if rules.SAFE_RULE:
+            for s0 in range(0, len(vidx), vlm.BATCH):
+                chunk = vidx[s0:s0 + vlm.BATCH]
+                if left() < reserve + (max(vcost) * len(chunk) if vcost else 0.0):
+                    break
+                try:
+                    answers = vlm.ask([objects.safe_crop(frames[i].img, zone) for i in chunk],
+                                      max_new_tokens=4, prompt=vlm.SAFE_PROMPT)
+                except Exception:                       # noqa: BLE001
+                    break
+                for i, raw in zip(chunk, answers):
+                    series[pos[round(frames[i].t, 3)]][1]["safe_open"] = \
+                        raw.strip().lower().startswith("open")
         # Отдельный вопрос про напиток в руке — только на кадрах, где Florence-2
         # назвал напиток или еду (обычно единицы кадров на ролик).
         didx = [i for i in vidx if series[pos[round(frames[i].t, 3)]][1].get("drink_or_food")]
@@ -291,6 +305,11 @@ _PHRASES = {
         "по оценке второй модели в помещении находятся трое и более человек",
         "доступ посторонних в кассовое помещение во время операций с наличностью "
         "ограничен требованиями к устройству кассового узла"),
+    "safe_open": (
+        "по оценке второй модели дверца сейфа (металлического шкафа) за рабочим местом "
+        "открыта, а работник при этом не у сейфа",
+        "ранее принятые наличные хранятся в устройствах, закрывающихся на ключ "
+        "(металлический шкаф, сейф)"),
     "sealed_handover": (
         "в кадре инкассаторская сумка, и в течение нескольких секунд после её появления "
         "людей в помещении становится меньше — передавший сумку уходит",

@@ -61,9 +61,20 @@ TYPES = {
     "food_drink": ("Напитки или еда на рабочем месте кассира", "V-05"),
     "personal_bag": ("Личные вещи (сумка) на рабочем месте кассира", "V-06"),
     "sealed_bag": ("Инкассаторская сумка вне сейфа / без присмотра", "V-07"),
+    "safe_open": ("Сейф оставлен открытым", "V-02"),
     "sealed_handover": ("Приём инкассаторской сумки без проверки целостности и пломбы", "V-07"),
     "unattended_desk": ("Рабочее место оставлено без работника, на столешнице находятся предметы", "V-02"),
     "other_anomaly": ("Иное отклонение от регламента (требует проверки человеком)", "V-08"),
+}
+
+
+# Типы, для которых пункт акта — трактовка, а не прямой запрет. Цитата в
+# kb/rules.json остаётся дословной; здесь только пометка для ответа API.
+INTERPRETATION = {
+    "safe_open": ("Пункт 20 не запрещает прямо открывать сейф: он требует хранить ранее "
+                  "принятые наличные в устройствах, закрывающихся на ключ (металлический "
+                  "шкаф, сейф). Открытый сейф при работнике, занятом другим, — трактовка "
+                  "этого требования; оценку даёт проверяющий."),
 }
 
 
@@ -72,6 +83,12 @@ def rule_ref(key: str) -> dict | None:
     r = KB.get(rid) if rid else None
     if not r:
         return None
+    if key in INTERPRETATION:
+        return {**_ref(r), "verified": False, "note": INTERPRETATION[key]}
+    return _ref(r)
+
+
+def _ref(r: dict) -> dict:
     return {
         "doc_title": r.get("doc_title", ""),
         "doc_requisites": r.get("doc_requisites", ""),
@@ -284,6 +301,15 @@ def detect_events(series: list[tuple[float, dict]],
                          for x in ev):
             ev.append(e)
 
+    # 11. Сейф оставлен открытым (п.20 Правил № 231 как трактовка, verified: false):
+    #     вторая модель по кропу области за столом отвечает «дверца открыта» серией
+    #     ≥ SAFE_MIN_SEC с или до конца записи, и работник при этом не у сейфа —
+    #     сидит за столом или помещение пусто. Только при SAFE_RULE=1 (VLM=1).
+    if SAFE_RULE:
+        e = _safe_open(series)
+        if e:
+            ev.append(e)
+
     # 9. Уход работника через дверь (вторая модель, DOOR_RULE=1 по умолчанию):
     #    «в двери кто-то есть» и «стул работника пуст» на DOOR_SUPPORT кадрах подряд.
     #    Перебор (NIGHT-LOG, шаг G2), KF_CAP=90, поверх правил 1-8:
@@ -401,6 +427,30 @@ def _absent_long(series, lo: int, hi: int) -> bool:
     if back is None:
         return True                                     # не вернулся до конца записи
     return back - series[lo][0] >= ABSENCE_MIN_SEC
+
+
+SAFE_RULE = os.environ.get("SAFE_RULE", "1") == "1"
+SAFE_MIN_SEC = 8.0          # длиннее любого эпизода в чистых роликах (Х-14 — 7.0 с)
+SAFE_END_TOL = 1.5          # «до конца записи»: последний «открыт» не дальше 1.5 с от конца
+SAFE_GAP = 2                # допуск на мерцание ответа: до 2 ключевых кадров «закрыт» внутри
+
+
+def _safe_open(series) -> Event | None:
+    if not any(f.get("safe_open") is not None for _, f in series):
+        return None
+    t_end = series[-1][0]
+    for lo, hi in _runs(series, lambda f: f.get("safe_open"), gap_tolerance=SAFE_GAP):
+        dur = series[hi][0] - series[lo][0]
+        if not (dur >= SAFE_MIN_SEC or t_end - series[hi][0] <= SAFE_END_TOL):
+            continue
+        part = [f for _, f in series[lo:hi + 1] if f.get("safe_open")]
+        away = sum(_seated(f) or _is_empty(f) for f in part)
+        if len(part) < 2 or away < 0.5 * len(part):
+            continue                                    # работник у сейфа — работает с ним
+        return Event(key="safe_open", type=TYPES["safe_open"][0], t=round(series[lo][0], 2),
+                     window=(round(series[lo][0], 2), round(series[hi][0], 2)),
+                     confidence=0.5, support=len(part), facts_at_t=series[lo][1])
+    return None
 
 
 def _is_empty(f: dict) -> bool:

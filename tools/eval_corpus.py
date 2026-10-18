@@ -64,6 +64,12 @@ def vlm_extra(name, i, facts, _cache={}):
     rows = _cache[name]
     if i < len(rows):
         facts.update(vlm.parse(rows[i]["raw"]))
+    skey = ("safe", name)
+    if skey not in _cache:
+        fp = Path(f"data/vlm_safe/{name}.json")
+        _cache[skey] = json.loads(fp.read_text()) if fp.exists() else {}
+    if str(i) in _cache[skey]:
+        facts["safe_open"] = _cache[skey][str(i)].startswith("open")
     key = ("drink", name)
     if key not in _cache:
         fp = Path(f"data/vlm_drink/{name}.json")
