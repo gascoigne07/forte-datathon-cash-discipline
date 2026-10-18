@@ -237,6 +237,8 @@ def detect_events(series: list[tuple[float, dict]],
         lo, hi = max(rr, key=lambda r: r[1] - r[0])
         mid = (lo + hi) // 2
         e = _mk(series, "unattended_desk", lo, hi, 1, 0.55)
+        if e and ABSENCE_MIN_SEC > 0 and not _absent_long(series, lo, hi):
+            e = None
         if e:
             e.t = round(series[mid][0], 2)
             e.facts_at_t = series[mid][1]
@@ -377,6 +379,28 @@ def _sealed_handover(series) -> Event | None:
     return Event(key="sealed_handover", type=TYPES["sealed_handover"][0], t=round(series[lo][0], 2),
                  window=(round(series[lo][0], 2), round(t_hi, 2)), confidence=0.55,
                  support=len(idx), facts_at_t=series[lo][1])
+
+
+# П8: «рабочее место без работника» засчитывается, только если работник отсутствует
+# ≥ ABSENCE_MIN_SEC с от начала серии или не возвращается до конца записи.
+# Замер (tools/absence_probe.py): чистый Х-12 — отлучка 1.0 с с возвращением;
+# истинные с возвращением — Х-30 9.0 с, Х-32 10.5 с; Х-11, Х-13, Х-15, Х-26 (и чистый
+# Х-25) — не возвращаются до конца записи. Плато 4–9 с: −Х-12, истинные не теряются.
+# Взято 6 с — середина плато.
+ABSENCE_MIN_SEC = 6.0
+
+
+def _absent_long(series, lo: int, hi: int) -> bool:
+    # Возвращение надёжно видно только со второй моделью (ответ «стул пуст»): без
+    # неё «сидит» держится на детекторе и подписи, и человек за стеклом или клиент
+    # у стола даёт ложное «вернулся». Замер на прежнем харнессе без второй модели:
+    # условие теряло Х-11, Х-30, Х-32. Поэтому без VLM условие не применяется.
+    if not any(f.get("chair_empty") is not None for _, f in series):
+        return True
+    back = next((t for t, f in series[hi + 1:] if _seated(f)), None)
+    if back is None:
+        return True                                     # не вернулся до конца записи
+    return back - series[lo][0] >= ABSENCE_MIN_SEC
 
 
 def _is_empty(f: dict) -> bool:
