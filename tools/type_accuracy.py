@@ -57,7 +57,7 @@ MAP = {
     "outsider": {"outsider_with_cash", "outsider_vlm"},
     "food_drink": {"food_drink"},
     "personal_bag": {"personal_bag"},
-    "sealed_bag": {"sealed_bag"},
+    "sealed_bag": {"sealed_bag", "sealed_handover"},
     "unclear": set(),
 }
 

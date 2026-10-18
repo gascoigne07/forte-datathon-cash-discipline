@@ -61,6 +61,7 @@ TYPES = {
     "food_drink": ("Напитки или еда на рабочем месте кассира", "V-05"),
     "personal_bag": ("Личные вещи (сумка) на рабочем месте кассира", "V-06"),
     "sealed_bag": ("Инкассаторская сумка вне сейфа / без присмотра", "V-07"),
+    "sealed_handover": ("Приём инкассаторской сумки без проверки целостности и пломбы", "V-07"),
     "unattended_desk": ("Рабочее место оставлено без работника, на столешнице находятся предметы", "V-02"),
     "other_anomaly": ("Иное отклонение от регламента (требует проверки человеком)", "V-08"),
 }
@@ -270,6 +271,17 @@ def detect_events(series: list[tuple[float, dict]],
                          for x in ev):
             ev.append(e)
 
+    # 10. Приём инкассаторской сумки без проверки (п.24 пп.3-4 Правил № 231): сумка
+    #     появилась в кадре (подпись называет её на ≥ SEALED_MIN_FRAMES кадрах), и
+    #     не позже SEALED_DROP_SEC с после её последнего появления людей в помещении
+    #     становится меньше, чем было при сумке, — инкассатор ушёл сразу после
+    #     передачи. Число людей — по второй модели, иначе по детектору и подписи.
+    if SEALED_HANDOVER:
+        e = _sealed_handover(series)
+        if e and not any(x.key == "sealed_bag" and x.window[0] <= e.t <= x.window[1] + 3
+                         for x in ev):
+            ev.append(e)
+
     # 9. Уход работника через дверь (вторая модель, DOOR_RULE=1 по умолчанию):
     #    «в двери кто-то есть» и «стул работника пуст» на DOOR_SUPPORT кадрах подряд.
     #    Перебор (NIGHT-LOG, шаг G2), KF_CAP=90, поверх правил 1-8:
@@ -331,6 +343,33 @@ def _anchor_to_leaving(ev: list[Event], series) -> None:
         e.window = (min(e.window[0], t_new), max(e.window[1], t_new))
         e.t = t_new
         e.facts_at_t = series[k][1]
+
+
+SEALED_HANDOVER = os.environ.get("SEALED_HANDOVER", "1") == "1"
+SEALED_MIN_FRAMES = 2
+SEALED_DROP_SEC = 6.0
+
+
+def _people(f: dict) -> int:
+    v = f.get("people_in_booth_vlm")
+    return v if v is not None else f.get("people_in_cabin", 0)
+
+
+def _sealed_handover(series) -> Event | None:
+    idx = [k for k, (_, f) in enumerate(series) if f.get("sealed_bag")]
+    if len(idx) < SEALED_MIN_FRAMES:
+        return None
+    lo, hi = idx[0], idx[-1]
+    with_bag = max(_people(series[k][1]) for k in idx)
+    if with_bag < 2:
+        return None
+    t_hi = series[hi][0]
+    after = [k for k in range(hi + 1, len(series)) if series[k][0] <= t_hi + SEALED_DROP_SEC]
+    if not any(_people(series[k][1]) < with_bag for k in after):
+        return None
+    return Event(key="sealed_handover", type=TYPES["sealed_handover"][0], t=round(series[lo][0], 2),
+                 window=(round(series[lo][0], 2), round(t_hi, 2)), confidence=0.55,
+                 support=len(idx), facts_at_t=series[lo][1])
 
 
 def _is_empty(f: dict) -> bool:
